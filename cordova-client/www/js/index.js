@@ -34,6 +34,7 @@ var app = {
 	// function, we must explicitly call 'app.receivedEvent(...);'
 	onDeviceReady : function() {
 		app.receivedEvent('deviceready');
+		alert('first:'+navigator.language);
 		console.log(navigator.globalization);
 		console.log(navigator.language);
 		console.log(navigator.userLanguage);
