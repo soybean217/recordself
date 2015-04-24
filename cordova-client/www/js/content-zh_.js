@@ -1,0 +1,1 @@
+var content_password = "密码";
