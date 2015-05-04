@@ -1,4 +1,4 @@
-function ShowObjProperty(Obj) {
+function debugShowObjProperty(Obj) {
 	var PropertyList = '';
 	var PropertyCount = 0;
 	for (i in Obj) {

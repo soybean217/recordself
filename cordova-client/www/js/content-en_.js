@@ -1,1 +1,0 @@
-var content_password = "Password";

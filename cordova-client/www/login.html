@@ -11,65 +11,159 @@
 
 <!-- Bootstrap core CSS -->
 <link rel="stylesheet" href="css/bootstrap.min.css">
+<!-- close when release -->
+<script src="js/debug.js"></script>
+
 <script src="js/jquery-2.1.3.min.js"></script>
 <script src="cordova.js"></script>
 <script src="SQLitePlugin.js"></script>
+<script src="js/local-db-parameters.js"></script>
 <script>
 	if (navigator.language.substring(0, 3) == "zh-") {
-		document.write("<script src='js/content-zh_.js'><\/script>");
+		document.write("<script src='js/globalization-zh_.js'><\/script>");
 	} else {
-		document.write("<script src='js/content-en_.js'><\/script>");
+		document.write("<script src='js/globalization-en_.js'><\/script>");
 	}
 </script>
 </head>
 
 <body>
 
-	<div class="container">
-
+	<div class="container" id="divLogin">
 		<form class="form-signin" role="form">
 			<h2 class="form-signin-heading">Please sign in</h2>
 			<label for="inputEmail" class="sr-only">Email address</label> <input
 				type="email" id="inputEmail" class="form-control" name="username"
 				placeholder="Email address" required autofocus> <label
 				for="inputPassword" class="sr-only"><script>
-					document.write(content_password);
+					document.write(globalization_password);
 				</script></label> <input name="password" type="password" id="inputPassword"
 				class="form-control" placeholder="Password" required>
 			<button class="btn btn-lg btn-primary btn-block" type="submit">Sign
 				in</button>
 		</form>
-		<script>
-			document.write(content_password);
-			$("#inputPassword").attr("placeholder", content_password);
-			var db;
-			document.addEventListener("deviceready", onDeviceReady, false);
-			function onDeviceReady() {
-				db = window.sqlitePlugin.openDatabase({
-					name : "my.db"
-				});
-				db.transaction(populateDB, errorCB, successCB);
-			}
-			// create table
-			function populateDB(tx) {
-				//tx.executeSql('DROP TABLE IF EXISTS local_system_parameters');
-				tx
-						.executeSql('CREATE TABLE IF NOT EXISTS local_system_parameters (title text primary key, detail text)');
-				//tx.executeSql('DROP TABLE IF EXISTS local_records');
-				tx
-						.executeSql('CREATE TABLE IF NOT EXISTS local_records (clientId integer primary key,serverId text UNIQUE, title text not null,detail text,serverUpdateTime integer,modifyStatus integer default 1 )');
-			}
-			// Transaction error callback
-			function errorCB(err) {
-				alert("errorCB");
-				console.log("Error processing SQL: " + err.code);
-			}
-			// Success callback
-			function successCB() {
-			}
-			//$("#inputPassword").attr.placeholder.value = content_password;
-		</script>
-		
 	</div>
+	<div class="container" id="divRegister">
+		<form class="form-signin" role="form">
+			<h2 class="form-signin-heading">
+				<script>
+					document.write(globalization_register);
+				</script>
+			</h2>
+			<label for="inputEmail" class="sr-only"><script>
+				document.write(globalization_username);
+			</script> </label> <input type="text" id="registerUsername" class="form-control"
+				name="username" placeholder="Username" required autofocus> <label
+				for="inputPassword" class="sr-only"><script>
+					document.write(globalization_password);
+				</script></label> <input name="password" type="password" id="registerPassword"
+				class="form-control" placeholder="Password" required><input
+				name="password" type="password" id="registerRePassword"
+				class="form-control" placeholder="Password" required>
+			<button class="btn btn-lg btn-primary btn-block" type="submit"
+				id="register">
+				<script>
+					document.write(globalization_register);
+				</script>
+			</button>
+		</form>
+	</div>
+	<script>
+		document.write(globalization_password);
+		var divArray = new Array();
+		divArray.push($("#divLogin"));
+		divArray.push($("#divRegister"));
+		//divArray.sort();//if you manual sort it , can close it .
+		$("#inputPassword").attr("placeholder", globalization_password);
+		var db = openDatabase("my.db", '1.0.0', '', 65536);
+		;
+		//test on chrome
+		$(document).ready(function() {
+			initial();
+		});
+
+		document.addEventListener("deviceready", onDeviceReady, false);
+		function onDeviceReady() {
+			db = window.sqlitePlugin.openDatabase({
+				name : "my.db"
+			});
+			initial();
+		}
+
+		function initial() {
+			initialDB();
+			initialButton();
+		}
+		function initialButton() {
+			$("#register").click(function() {
+				//check form data
+
+			})
+		}
+		function initialDB() {
+			db.transaction(populateDB, errorCB, successCB);
+		}
+		// create table
+		function populateDB(tx) {
+			//tx.executeSql('DROP TABLE IF EXISTS local_system_parameters');
+			tx
+					.executeSql('CREATE TABLE IF NOT EXISTS local_system_parameters (title text primary key, detail text)');
+			//tx.executeSql('DROP TABLE IF EXISTS local_records');
+			tx
+					.executeSql('CREATE TABLE IF NOT EXISTS local_records (clientId integer primary key,serverId text UNIQUE, title text not null,detail text,serverUpdateTime integer,modifyStatus integer default 1 )');
+			checkParametersForInitial(tx);
+		}
+		// form the query
+		function checkParametersForInitial(tx) {
+			tx.executeSql(
+					"SELECT detail from local_system_parameters where title = '"
+							+ localParameterLastSyncServerTime + "';", [],
+					initialParameters, errorCB);
+		}
+		// Display the results
+		function initialParameters(tx, results) {
+			var len = results.rows.length;
+			if (len == 0) {
+				//alert("debug no record.");
+				//enter register or local use
+				divControl("#divRegister");
+			} else {
+				//list record
+			}
+		}
+		// only accept sorted argument!
+		function divControl() {
+			var i = 0, numargs = arguments.length;
+			//close all div
+			var argArray = arguments;
+			divArray.forEach(function(elem, index, arr) {
+				//console.log(debugShowObjProperty(elem));
+				elem.hide();
+				//you can optimize here from last index, if arguments is sorted .
+				for (i = 0; i < numargs; i++) {
+					//					if (elem.selector == arguments[i].selector) {
+					if (elem.selector == argArray[i]) {
+						elem.show();
+						break;
+					}
+				}
+			});
+		}
+		// Transaction error callback
+		function errorCB(err) {
+			alert("errorCB:" + err.code);
+			console.log("Error processing SQL: " + err.code);
+		}
+		// Success callback
+		function successCB() {
+		}
+		initialAttribute()
+		function initialAttribute() {
+			$("#registerUsername").attr("placeholder", globalization_username);
+			$("#registerPassword").attr("placeholder", globalization_password);
+			$("#registerRePassword").attr("placeholder",
+					globalization_confirm_password);
+		}
+	</script>
 </body>
 </html>
