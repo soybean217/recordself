@@ -11,6 +11,8 @@
 
 <!-- Bootstrap core CSS -->
 <link rel="stylesheet" href="css/bootstrap.min.css">
+<!-- JQUERY validate CSS -->
+<link rel="stylesheet" href="css/screen.css">
 <!-- close when release -->
 <script src="js/debug.js"></script>
 
@@ -21,9 +23,10 @@
 <script src="js/local-db-parameters.js"></script>
 <script>
 	if (navigator.language.substring(0, 3) == "zh-") {
-		document.write("<script src='js/globalization-zh_.js'><\/script>");
+		document.write("<script src='js/globalization-zh.js'><\/script>");
+		document.write("<script src='js/messages_zh.min.js'><\/script>");
 	} else {
-		document.write("<script src='js/globalization-en_.js'><\/script>");
+		document.write("<script src='js/globalization-en.js'><\/script>");
 	}
 </script>
 </head>
@@ -54,13 +57,14 @@
 			<label for="inputEmail" class="sr-only"><script>
 				document.write(globalization_username);
 			</script> </label> <input type="text" id="registerUsername" class="form-control"
-				name="username" placeholder="Username" required autofocus> <label
+				name="registerUsername" placeholder="Username" autofocus> <label
 				for="inputPassword" class="sr-only"><script>
 					document.write(globalization_password);
-				</script></label> <input name="password" type="password" id="registerPassword"
-				class="form-control" placeholder="Password" required><input
-				name="password" type="password" id="registerRePassword"
-				class="form-control" placeholder="Password" required>
+				</script></label> <input name="registerPassword" type="password"
+				id="registerPassword" class="form-control" placeholder="Password"
+				required><input name="registerRePassword" type="password"
+				id="registerRePassword" class="form-control" placeholder="Password"
+				required>
 			<button class="btn btn-lg btn-primary btn-block" type="submit"
 				id="register">
 				<script>
@@ -70,7 +74,23 @@
 		</form>
 	</div>
 	<script>
-		$("#formRegister").validate();
+		$("#formRegister").validate({
+			rules : {
+				registerUsername : "required",
+				registerPassword : {
+					required : true,
+					minlength : 1
+				},
+				registerRePassword : {
+					required : true,
+					minlength : 1,
+					equalTo : "#registerPassword"
+				}
+			}
+		});
+		$("formRegister").submit(function(e){
+			  alert("Submitted");
+			});
 		document.write(globalization_password);
 		var divArray = new Array();
 		divArray.push($("#divLogin"));
