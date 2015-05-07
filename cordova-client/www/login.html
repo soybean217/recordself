@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+	//parameters
+	var serverUrl = "http://10.0.0.2:8080/recordself-server/for-client/";
+</script>
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -56,15 +60,15 @@
 			</h2>
 			<label for="inputEmail" class="sr-only"><script>
 				document.write(globalization_username);
-			</script> </label> <input type="text" id="registerUsername" class="form-control"
-				name="registerUsername" placeholder="Username" autofocus> <label
+			</script> </label> <input type="text" id="signUpUserName" class="form-control"
+				name="signUpUserName" placeholder="Username" autofocus> <label
 				for="inputPassword" class="sr-only"><script>
 					document.write(globalization_password);
-				</script></label> <input name="registerPassword" type="password"
-				id="registerPassword" class="form-control" placeholder="Password"
-				required><input name="registerRePassword" type="password"
-				id="registerRePassword" class="form-control" placeholder="Password"
-				required>
+				</script></label> <input name="signUpPassword" type="password" id="signUpPassword"
+				class="form-control" placeholder="Password" required><input
+				name="signUpConfirmPassword" type="password"
+				id="signUpConfirmPassword" class="form-control"
+				placeholder="Password" required>
 			<button class="btn btn-lg btn-primary btn-block" type="submit"
 				id="register">
 				<script>
@@ -74,23 +78,57 @@
 		</form>
 	</div>
 	<script>
-		$("#formRegister").validate({
-			rules : {
-				registerUsername : "required",
-				registerPassword : {
-					required : true,
-					minlength : 1
-				},
-				registerRePassword : {
-					required : true,
-					minlength : 1,
-					equalTo : "#registerPassword"
+		$(document).ready(function() {
+			$("#formRegister").validate({
+				rules : {
+					signUpUserName : {
+						required : true,
+						minlength : 1,
+						maxlength : 31
+					},
+					signUpPassword : {
+						required : true,
+						minlength : 1,
+						maxlength : 31
+					},
+					signUpConfirmPassword : {
+						required : true,
+						minlength : 1,
+						maxlength : 31,
+						equalTo : "#signUpPassword"
+					}
 				}
-			}
-		});
-		$("formRegister").submit(function(e){
-			  alert("Submitted");
 			});
+			$("#formRegister").submit(function(e) {
+				e.preventDefault();
+				if ($("#formRegister").valid()) {
+					var signUpData = {
+						userName : $("#signUpUserName").val(),
+						password : $("#signUpPassword").val()
+					};
+					signUpAjax(signUpData);
+					alert("Submit prevented");
+				}
+			});
+		});
+
+		function signUpAjax(signUpData) {
+			$.ajax({
+				type : "post",
+				url : serverUrl + "sign-up.jsp",
+				async : false,
+				data : JSON.stringify(signUpData),
+				dataType : "json",
+				success : function(msg) {
+					alert("ajax reach!");
+				},
+				error : function(XMLHttpRequest, textStatus, errorThrown) {
+					alert(XMLHttpRequest.status);
+					alert(XMLHttpRequest.readyState);
+					alert(textStatus);
+				}
+			});
+		}
 		document.write(globalization_password);
 		var divArray = new Array();
 		divArray.push($("#divLogin"));
@@ -181,9 +219,9 @@
 		}
 		initialAttribute()
 		function initialAttribute() {
-			$("#registerUsername").attr("placeholder", globalization_username);
-			$("#registerPassword").attr("placeholder", globalization_password);
-			$("#registerRePassword").attr("placeholder",
+			$("#signUpUserName").attr("placeholder", globalization_username);
+			$("#signUpPassword").attr("placeholder", globalization_password);
+			$("#signUpConfirmPassword").attr("placeholder",
 					globalization_confirm_password);
 		}
 	</script>
