@@ -15,16 +15,22 @@
 
 <!-- Bootstrap core CSS -->
 <link rel="stylesheet" href="css/bootstrap.min.css">
+<link rel="stylesheet" href="css/jquery.dataTables-1.10.7.css">
+<link rel="stylesheet" href="css/bootstrap-datetimepicker.min.css">
 <!-- JQUERY validate CSS -->
 <link rel="stylesheet" href="css/screen.css">
 <!-- close when release -->
 <script src="js/debug.js"></script>
 
 <script src="js/jquery-2.1.3.min.js"></script>
+<script src="js/bootstrap-3.3.4.min.js"></script>
+<script src="js/jquery.dataTables-1.10.7.min.js"></script>
 <script src="js/jquery.validate.min.js"></script>
+<script src="js/bootstrap-datetimepicker.min.js"></script>
+<script src="js/inc-functions.js"></script>
+<script src="js/local-db-parameters.js"></script>
 <script src="cordova.js"></script>
 <script src="SQLitePlugin.js"></script>
-<script src="js/local-db-parameters.js"></script>
 <script>
 	if (navigator.language.substring(0, 3) == "zh-") {
 		document.write("<script src='js/globalization-zh.js'><\/script>");
@@ -55,7 +61,7 @@
 		<form class="form-signin" id="formRegister" role="form">
 			<h2 class="form-signin-heading">
 				<script>
-					document.write(globalization_register);
+					document.write(globalization_sign_up);
 				</script>
 			</h2>
 			<label for="inputEmail" class="sr-only"><script>
@@ -72,13 +78,229 @@
 			<button class="btn btn-lg btn-primary btn-block" type="submit"
 				id="register">
 				<script>
-					document.write(globalization_register);
+					document.write(globalization_sign_up);
+				</script>
+			</button>
+			<button class="btn btn-lg btn-primary btn-block" type="button"
+				id="signUpToSignIn">
+				<script>
+					document.write(globalization_sign_in_exist);
 				</script>
 			</button>
 		</form>
 	</div>
+	<div class="container" id="divRecord">
+		<form class="form-record" id="formRecord" role="form">
+			<h2 class="form-signin-heading">
+				<script>
+					document.write(globalization_begin);
+				</script>
+			</h2>
+			<label for="inputEmail" class="sr-only"><script>
+				document.write(globalization_username);
+			</script> </label> <input type="text" id="recordEditTitle" class="form-control"
+				name="recordEditTitle" placeholder="Title" autofocus> <input
+				type="text" id="recordEditDetail" class="form-control"
+				name="recordEditDetail" placeholder="Detail"><input
+				type="hidden" id="recordEditId" class="form-control"
+				name="recordEditId"> time:<input size="16" type="text" id="beginTime" 
+				class="form_datetime">
+			<script>
+				$(".form_datetime").datetimepicker({
+					format : 'yyyy-mm-dd hh:ii',
+					autoclose : 1,
+					initialDate : new Date()
+				});
+				//$("#beginTime").val(new Date().Format("yyyy-MM-dd hh:mm"));
+				$("#beginTime").val("now");
+			</script>
+			<button class="btn btn-lg btn-primary btn-block" type="submit"
+				id="register">
+				<script>
+					document.write(globalization_begin);
+				</script>
+			</button>
+		</form>
+	</div>
+	<div class="container" id="divDisplayRecordList">
+		<table cellpadding="0" cellspacing="0" border="0" class="display"
+			id="tableRecord"></table>
+	</div>
 	<script>
+		document.write(globalization_password);
+		var divArray = new Array();
+		var databaseStatus = "empty";
+		var mJsonMsg, mEditRecord, mLocalDbProcess, mUserId, mDisplayData, mRecordDataSet, mTable;
+		divArray.push($("#divLogin"));
+		divArray.push($("#divRegister"));
+		divArray.push($("#divRecord"));
+		divArray.push($("#divDisplayRecordList"));
+		//divArray.sort();//if you manual sort it , can close it .
+		$("#inputPassword").attr("placeholder", globalization_password);
+		var db = openDatabase("my.db", '1.0.0', '', 65536);
 		$(document).ready(function() {
+			formSignUpFormInitial();
+			divRecordFormInitial();
+			divDisplayRecordList();
+		});
+
+		function divDisplayRecordList() {
+			mTable = $('#tableRecord').DataTable({
+				"data" : mRecordDataSet,
+				"paging" : false,
+				"ordering" : false,
+				"info" : false,
+				"searching" : false,
+				"order" : [ [ 0, "desc" ] ],
+				"columns" : [ {
+					"title" : "Id"
+				}, {
+					"title" : "Title"
+				}, {
+					"title" : "Detail"
+				} ],
+				"columnDefs" : [ {
+					"targets" : [ 0 ],
+					"visible" : false,
+					"searchable" : false
+				} ]
+			});
+			$('#tableRecord tbody').on('click', 'tr', function() {
+				alert (mTable.row(this).data()[0]);
+				divRecordFormFill(mTable.row(this).data());
+				location.hash = 'divRecord';
+			});
+		}
+
+		function divRecordFormFill(row) {
+			$("#recordEditTitle").val(row[1]);
+			$("#recordEditDetail").val(row[2]);
+			$("#recordEditId").val(row[0]);
+		}
+
+		function divRecordFormInitial() {
+			$("#formRecord").validate({
+				rules : {
+					recordEditTitle : {
+						required : true,
+					}
+				}
+			});
+			$("#formRecord").submit(function(e) {
+				e.preventDefault();
+				alert((new Date($("#beginTime").val())).valueOf()+" "+(new Date()).valueOf());
+				if ($("#formRegister").valid()) {
+					mEditRecord = {
+						title : $("#recordEditTitle").val(),
+						detail : $("#recordEditDetail").val(),
+						id : $("#recordEditId").val()
+					};
+					editRecordProcess();
+					queryRecordAndDisplay();
+				}
+			});
+		}
+
+		function editRecordProcess() {
+			if (mEditRecord != null) {
+				if (mEditRecord.id > 0) {
+					//update
+				} else {
+					//insert
+					mLocalDbProcess = "insertRecord";
+					db.transaction(dbInsertSingleRecord, errorCB);
+				}
+			}
+		}
+
+		function queryRecordAndDisplay() {
+			divControl("#divRecord", "#divDisplayRecordList");
+			mLocalDbProcess = "queryRecordAndDisplay";
+			db.transaction(dbQueryRecord, errorCB);
+		}
+
+		// form the query
+		function dbQueryRecord(tx) {
+			tx
+					.executeSql(
+							"SELECT clientId,serverId,title,detail,serverUpdateTime,modifyStatus from local_records order by clientid desc limit 0,20;",
+							[], refreshDataViewTest, errorCB);
+		}
+
+		// Display the results
+		function refreshDataViewTest(tx, results) {
+			mDisplayData = {
+				records : []
+			};
+			var mRow = [];
+			mRecordDataSet = [];
+			var len = results.rows.length;
+			//alert("results.rows.length: " + results.rows.length);
+			for (var i = 0; i < len; i++) { // loop as many times as there are row results
+				//			mRecordDataSet[i][0] = results.rows.item(i).title;
+				var mRow = [ results.rows.item(i).clientId,
+						results.rows.item(i).title, results.rows.item(i).detail ];
+				mRecordDataSet[i] = mRow;
+				var row = {};
+				row.clientId = results.rows.item(i).clientId;
+				row.serverId = results.rows.item(i).serverId;
+				row.title = results.rows.item(i).title;
+				row.serverUpdateTime = results.rows.item(i).serverUpdateTime;
+				mDisplayData.records.push(row);
+			}
+			//mTable.fnClearTable();
+			//mTable.fnAddData(mRecordDataSet);
+			//mTable.fnUpdate();
+			//mTable.rows.add(mRecordDataSet).draw();
+			//mTable.fnDraw();
+
+			mTable.clear();
+			mTable.rows.add(mRecordDataSet);
+			mTable.draw();
+
+			//mTable.fnDestroy();
+
+			//$('#tableRecord').dataTable().destroy();
+			//divDisplayRecordList();
+			//$('#tableRecord').dataTable().data(mRecordDataSet);
+			//$('#tableRecord').dataTable().fnDraw();
+		}
+		// Display the results
+		function refreshDataView(tx, results) {
+			mDisplayData = {
+				records : []
+			};
+			mRecordDataSet = [];
+			var len = results.rows.length;
+			//alert("results.rows.length: " + results.rows.length);
+			document.getElementById("divDisplayRecordList").innerHTML = "";
+			for (var i = 0; i < len; i++) { // loop as many times as there are row results
+				document.getElementById("divDisplayRecordList").innerHTML += "<table><tr onclick=\"modifyRecord("
+						+ results.rows.item(i).clientId
+						+ ")\"><td>client_id = "
+						+ results.rows.item(i).clientId
+						+ "</td><td>server_id = "
+						+ results.rows.item(i).serverId
+						+ "</td><td>title = "
+						+ results.rows.item(i).title
+						+ "</td><td>server_update_time = "
+						+ results.rows.item(i).serverUpdateTime
+						+ "</td><td>modify_status = "
+						+ results.rows.item(i).modifyStatus
+						+ "</td></tr></table>";
+				mRecordDataSet[i] = results.rows.item(i).title;
+				var row = {};
+				row.clientId = results.rows.item(i).clientId;
+				row.serverId = results.rows.item(i).serverId;
+				row.title = results.rows.item(i).title;
+				row.serverUpdateTime = results.rows.item(i).serverUpdateTime;
+				mDisplayData.records.push(row);
+			}
+			$('#tableRecord').dataTable().data(mRecordDataSet);
+			$('#tableRecord').dataTable().draw();
+		}
+
+		function formSignUpFormInitial() {
 			$("#formRegister").validate({
 				rules : {
 					signUpUserName : {
@@ -107,10 +329,9 @@
 						password : $("#signUpPassword").val()
 					};
 					signUpAjax(signUpData);
-					alert("Submit prevented");
 				}
 			});
-		});
+		}
 
 		function signUpAjax(signUpData) {
 			$.ajax({
@@ -120,7 +341,21 @@
 				data : JSON.stringify(signUpData),
 				dataType : "json",
 				success : function(msg) {
-					alert("ajax reach!");
+					if (msg.status == "success") {
+						if (databaseStatus == "empty") {
+							mJsonMsg = msg;
+							mUserId = mJsonMsg.userId;
+							// insert account to local database 
+							mLocalDbProcess = "insertLocalUserAccout";
+							db.transaction(dbInsertAccountInfo, errorCB);
+
+							queryRecordAndDisplay();
+						} else {
+							//
+						}
+					} else {
+						alert(msg.status + " " + msg.msg);
+					}
 				},
 				error : function(XMLHttpRequest, textStatus, errorThrown) {
 					alert(XMLHttpRequest.status);
@@ -129,14 +364,7 @@
 				}
 			});
 		}
-		document.write(globalization_password);
-		var divArray = new Array();
-		divArray.push($("#divLogin"));
-		divArray.push($("#divRegister"));
-		//divArray.sort();//if you manual sort it , can close it .
-		$("#inputPassword").attr("placeholder", globalization_password);
-		var db = openDatabase("my.db", '1.0.0', '', 65536);
-		;
+
 		//test on chrome
 		$(document).ready(function() {
 			initial();
@@ -161,7 +389,34 @@
 			})
 		}
 		function initialDB() {
+			mLocalDbProcess = "Initial DB";
 			db.transaction(populateDB, errorCB, successCB);
+		}
+		// insert account info to local 
+		function dbInsertAccountInfo(tx) {
+			tx
+					.executeSql(
+							'insert into local_system_parameters (title,detail) values (?,?)',
+							[ "userName", $("#signUpUserName").val() ]);
+			tx
+					.executeSql(
+							'insert into local_system_parameters (title,detail) values (?,?)',
+							[ "userIdString", mJsonMsg.data.userIdString ]);
+			tx
+					.executeSql(
+							'insert into local_system_parameters (title,detail) values (?,?)',
+							[ "passwordEncrypted",
+									MD5($("#signUpPassword").val()) ]);
+		}
+		// insert record to local 
+		function dbInsertSingleRecord(tx) {
+			var recordBeginTimeLong ;
+			if ()
+			tx
+					.executeSql(
+							"insert into local_records (userId,title,detail) values (?,?,?); ",
+							[ mUserId, $("#recordEditTitle").val(),
+									$("#recordEditDetail").val() ]);
 		}
 		// create table
 		function populateDB(tx) {
@@ -169,15 +424,20 @@
 			tx
 					.executeSql('CREATE TABLE IF NOT EXISTS local_system_parameters (title text primary key, detail text)');
 			//tx.executeSql('DROP TABLE IF EXISTS local_records');
-			tx
-					.executeSql('CREATE TABLE IF NOT EXISTS local_records (clientId integer primary key,serverId text UNIQUE, title text not null,detail text,serverUpdateTime integer,modifyStatus integer default 1 )');
+			tx.executeSql('CREATE TABLE IF NOT EXISTS local_records ('
+					+ 'clientId integer primary key,' + 'userId text,'
+					+ ' serverId text UNIQUE,'
+					+ 'title text not null,detail text,'
+					+ 'beginTime integer default 0,'
+					+ 'endTime integer default 0,'
+					+ 'serverUpdateTime integer default 0,'
+					+ 'modifyStatus integer default 1 )');
 			checkParametersForInitial(tx);
 		}
 		// form the query
 		function checkParametersForInitial(tx) {
-			tx.executeSql(
-					"SELECT detail from local_system_parameters where title = '"
-							+ localParameterLastSyncServerTime + "';", [],
+			mLocalDbProcess = "Get initial parameter";
+			tx.executeSql("SELECT detail from local_system_parameters ;", [],
 					initialParameters, errorCB);
 		}
 		// Display the results
@@ -189,6 +449,8 @@
 				divControl("#divRegister");
 			} else {
 				//list record
+				databaseStatus = "exist";
+				queryRecordAndDisplay();
 			}
 		}
 		// only accept sorted argument!
@@ -211,7 +473,7 @@
 		}
 		// Transaction error callback
 		function errorCB(err) {
-			alert("errorCB:" + err.code);
+			alert("errorCB:" + err.code + " as:" + mLocalDbProcess);
 			console.log("Error processing SQL: " + err.code);
 		}
 		// Success callback
