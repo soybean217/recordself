@@ -3,7 +3,7 @@
 <head>
 <script>
 	//parameters
-	var serverUrl = "http://10.0.0.2:8080/recordself-server/for-client/";
+	var mServerUrl = "http://10.0.0.2:8080/recordself-server/for-client/";
 </script>
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -27,6 +27,7 @@
 <script src="js/jquery.dataTables-1.10.7.min.js"></script>
 <script src="js/jquery.validate.min.js"></script>
 <script src="js/bootstrap-datetimepicker.min.js"></script>
+<script src="js/BigInteger.min.js"></script>
 <script src="js/inc-functions.js"></script>
 <script src="js/local-db-parameters.js"></script>
 <script src="cordova.js"></script>
@@ -103,23 +104,39 @@
 				type="text" id="recordEditDetail" class="form-control"
 				name="recordEditDetail" placeholder="Detail"><input
 				type="hidden" id="recordEditId" class="form-control"
-				name="recordEditId"> time:<input size="16" type="text" id="beginTime" 
-				class="form_datetime">
-			<script>
-				$(".form_datetime").datetimepicker({
-					format : 'yyyy-mm-dd hh:ii',
-					autoclose : 1,
-					initialDate : new Date()
-				});
-				//$("#beginTime").val(new Date().Format("yyyy-MM-dd hh:mm"));
-				$("#beginTime").val("now");
-			</script>
+				name="recordEditId">
+			<div class="row" id="recordEditTimePicker">
+				Begin time:<input size="14" type="text" id="recordEditBeginTime"
+					class="form_datetime"> End time:<input size="14"
+					type="text" id="recordEditEndTime" class="form_datetime">
+			</div>
+			<div class="row" id="recordEditButtonGroup">
+				<div class="btn-group" role="group" aria-label="...">
+					<button type="submit" class="btn btn-default">update</button>
+					<button type="button" class="btn btn-warning" id="recordEditDelete">delete</button>
+					<button type="button" class="btn btn-success">if no end
+						time</button>
+					<div class="btn-group" role="group">
+						<button type="button" class="btn btn-default dropdown-toggle"
+							data-toggle="dropdown" aria-expanded="false">
+							Dropdown <span class="caret"></span>
+						</button>
+						<ul class="dropdown-menu" role="menu">
+							<li><a href="#">Dropdown link</a></li>
+							<li><a href="#">Dropdown link</a></li>
+						</ul>
+					</div>
+				</div>
+			</div>
 			<button class="btn btn-lg btn-primary btn-block" type="submit"
-				id="register">
+				id="recordEditAddNew">
 				<script>
 					document.write(globalization_begin);
 				</script>
 			</button>
+			<script>
+				//$("#recordEditBeginTime").val(    new Date().Format("yyyy-MM-dd hh:mm"));
+			</script>
 		</form>
 	</div>
 	<div class="container" id="divDisplayRecordList">
@@ -127,10 +144,11 @@
 			id="tableRecord"></table>
 	</div>
 	<script>
-		document.write(globalization_password);
+		var LIMIT_UPDATE_BATCH_SIZE = 100;
 		var divArray = new Array();
 		var databaseStatus = "empty";
-		var mJsonMsg, mEditRecord, mLocalDbProcess, mUserId, mDisplayData, mRecordDataSet, mTable;
+		var mJsonMsg, mEditRecord, mLocalDbProcess, mLocalParameters, mDisplayData, mRecordDataSet, mTable, mNeedServerIdCount;
+		mLocalParameters = {};
 		divArray.push($("#divLogin"));
 		divArray.push($("#divRegister"));
 		divArray.push($("#divRecord"));
@@ -141,10 +159,10 @@
 		$(document).ready(function() {
 			formSignUpFormInitial();
 			divRecordFormInitial();
-			divDisplayRecordList();
+			divDisplayRecordListFromDb();
 		});
 
-		function divDisplayRecordList() {
+		function divDisplayRecordListFromDb() {
 			mTable = $('#tableRecord').DataTable({
 				"data" : mRecordDataSet,
 				"paging" : false,
@@ -158,42 +176,91 @@
 					"title" : "Title"
 				}, {
 					"title" : "Detail"
+				}, {
+					"title" : "Begin"
+				}, {
+					"title" : "End"
 				} ],
 				"columnDefs" : [ {
 					"targets" : [ 0 ],
 					"visible" : false,
 					"searchable" : false
+				}, {
+					"targets" : [ 2 ],
+					"visible" : false,
+				}, {
+					"targets" : [ 4 ],
+					"visible" : false,
 				} ]
 			});
 			$('#tableRecord tbody').on('click', 'tr', function() {
-				alert (mTable.row(this).data()[0]);
 				divRecordFormFill(mTable.row(this).data());
 				location.hash = 'divRecord';
+			});
+			$("#recordEditDelete").click(function() {
+				deleteRecordWithId();
+				queryRecordAndDisplay();
+				divRecordFormNew();
+			})
+		}
+		function deleteRecordWithId() {
+			mLocalDbProcess = "deleteRecord";
+			db.transaction(dbDeleteSingleRecord, errorCB);
+		}
+		function dbDeleteSingleRecord(tx) {
+			tx
+					.executeSql(
+							"update local_records set state = -1 ,modifyStatus=1 where clientId = ?; ",
+							[ $("#recordEditId").val() ]);
+		}
+		function divRecordFormNew() {
+			$("#recordEditButtonGroup").hide();
+			$("#recordEditTimePicker").hide();
+			$(".form_datetime").datetimepicker({
+				format : 'yyyy-mm-dd hh:ii',
+				autoclose : 1,
+				initialDate : new Date()
 			});
 		}
 
 		function divRecordFormFill(row) {
-			$("#recordEditTitle").val(row[1]);
-			$("#recordEditDetail").val(row[2]);
-			$("#recordEditId").val(row[0]);
+			if (row == null) {
+			} else {
+				$("#recordEditTitle").val(row[1]);
+				$("#recordEditDetail").val(row[2]);
+				$("#recordEditId").val(row[0]);
+				$("#recordEditBeginTime").val(row[3]);
+				if (row[4] == "") {
+					$("#recordEditEndTime").val(
+							new Date().Format("yyyy-MM-dd hh:mm"));
+				} else {
+					$("#recordEditEndTime").val(row[4]);
+				}
+				$("#recordEditBeginTime").show();
+				$("#recordEditEndTime").show();
+				$("#recordEditButtonGroup").show();
+				$("#recordEditTimePicker").show();
+				$("#recordEditAddNew").hide();
+			}
 		}
 
 		function divRecordFormInitial() {
 			$("#formRecord").validate({
 				rules : {
 					recordEditTitle : {
-						required : true,
+						required : true
 					}
 				}
 			});
 			$("#formRecord").submit(function(e) {
 				e.preventDefault();
-				alert((new Date($("#beginTime").val())).valueOf()+" "+(new Date()).valueOf());
-				if ($("#formRegister").valid()) {
+				if ($("#formRecord").valid()) {
 					mEditRecord = {
 						title : $("#recordEditTitle").val(),
 						detail : $("#recordEditDetail").val(),
-						id : $("#recordEditId").val()
+						beginTimeInputString : $("#recordEditBeginTime").val(),
+						endTimeInputString : $("#recordEditEndTime").val(),
+						clientId : $("#recordEditId").val()
 					};
 					editRecordProcess();
 					queryRecordAndDisplay();
@@ -203,8 +270,10 @@
 
 		function editRecordProcess() {
 			if (mEditRecord != null) {
-				if (mEditRecord.id > 0) {
+				if (mEditRecord.clientId > 0) {
 					//update
+					mLocalDbProcess = "updateRecord";
+					db.transaction(dbUpdateSingleRecord, errorCB);
 				} else {
 					//insert
 					mLocalDbProcess = "insertRecord";
@@ -223,12 +292,13 @@
 		function dbQueryRecord(tx) {
 			tx
 					.executeSql(
-							"SELECT clientId,serverId,title,detail,serverUpdateTime,modifyStatus from local_records order by clientid desc limit 0,20;",
-							[], refreshDataViewTest, errorCB);
+							"SELECT clientId,serverId,title,detail,serverUpdateTime,modifyStatus,beginTime,endTime from local_records where userId=? and state<>-1 order by beginTime desc limit 0,20;",
+							[ mLocalParameters['userIdString'] ],
+							refreshDataView, errorCB);
 		}
 
 		// Display the results
-		function refreshDataViewTest(tx, results) {
+		function refreshDataView(tx, results) {
 			mDisplayData = {
 				records : []
 			};
@@ -238,8 +308,15 @@
 			//alert("results.rows.length: " + results.rows.length);
 			for (var i = 0; i < len; i++) { // loop as many times as there are row results
 				//			mRecordDataSet[i][0] = results.rows.item(i).title;
-				var mRow = [ results.rows.item(i).clientId,
-						results.rows.item(i).title, results.rows.item(i).detail ];
+				var mRow = [
+						results.rows.item(i).clientId,
+						results.rows.item(i).title,
+						results.rows.item(i).detail,
+						new Date(results.rows.item(i).beginTime)
+								.Format("yyyy-MM-dd hh:mm"),
+						results.rows.item(i).endTime == 0 ? "" : (new Date(
+								results.rows.item(i).endTime)
+								.Format("yyyy-MM-dd hh:mm")) ];
 				mRecordDataSet[i] = mRow;
 				var row = {};
 				row.clientId = results.rows.item(i).clientId;
@@ -264,40 +341,6 @@
 			//divDisplayRecordList();
 			//$('#tableRecord').dataTable().data(mRecordDataSet);
 			//$('#tableRecord').dataTable().fnDraw();
-		}
-		// Display the results
-		function refreshDataView(tx, results) {
-			mDisplayData = {
-				records : []
-			};
-			mRecordDataSet = [];
-			var len = results.rows.length;
-			//alert("results.rows.length: " + results.rows.length);
-			document.getElementById("divDisplayRecordList").innerHTML = "";
-			for (var i = 0; i < len; i++) { // loop as many times as there are row results
-				document.getElementById("divDisplayRecordList").innerHTML += "<table><tr onclick=\"modifyRecord("
-						+ results.rows.item(i).clientId
-						+ ")\"><td>client_id = "
-						+ results.rows.item(i).clientId
-						+ "</td><td>server_id = "
-						+ results.rows.item(i).serverId
-						+ "</td><td>title = "
-						+ results.rows.item(i).title
-						+ "</td><td>server_update_time = "
-						+ results.rows.item(i).serverUpdateTime
-						+ "</td><td>modify_status = "
-						+ results.rows.item(i).modifyStatus
-						+ "</td></tr></table>";
-				mRecordDataSet[i] = results.rows.item(i).title;
-				var row = {};
-				row.clientId = results.rows.item(i).clientId;
-				row.serverId = results.rows.item(i).serverId;
-				row.title = results.rows.item(i).title;
-				row.serverUpdateTime = results.rows.item(i).serverUpdateTime;
-				mDisplayData.records.push(row);
-			}
-			$('#tableRecord').dataTable().data(mRecordDataSet);
-			$('#tableRecord').dataTable().draw();
 		}
 
 		function formSignUpFormInitial() {
@@ -324,44 +367,39 @@
 			$("#formRegister").submit(function(e) {
 				e.preventDefault();
 				if ($("#formRegister").valid()) {
-					var signUpData = {
-						userName : $("#signUpUserName").val(),
-						password : $("#signUpPassword").val()
-					};
-					signUpAjax(signUpData);
+					signUpAjax(mServerUrl);
 				}
 			});
 		}
 
-		function signUpAjax(signUpData) {
+		function signUpAjax(serverUrl) {
+			var oriData = {
+				userName : $("#signUpUserName").val(),
+				password : $("#signUpPassword").val()
+			};
 			$.ajax({
 				type : "post",
 				url : serverUrl + "sign-up.jsp",
 				async : false,
-				data : JSON.stringify(signUpData),
+				data : JSON.stringify(oriData),
 				dataType : "json",
 				success : function(msg) {
 					if (msg.status == "success") {
 						if (databaseStatus == "empty") {
 							mJsonMsg = msg;
-							mUserId = mJsonMsg.userId;
+							mLocalParameters['userIdString'] = mJsonMsg.userId;
 							// insert account to local database 
 							mLocalDbProcess = "insertLocalUserAccout";
 							db.transaction(dbInsertAccountInfo, errorCB);
-
 							queryRecordAndDisplay();
 						} else {
 							//
 						}
 					} else {
-						alert(msg.status + " " + msg.msg);
+						ajaxGetNotSuccessMsg(msg);
 					}
 				},
-				error : function(XMLHttpRequest, textStatus, errorThrown) {
-					alert(XMLHttpRequest.status);
-					alert(XMLHttpRequest.readyState);
-					alert(textStatus);
-				}
+				error : ajaxNetworkError
 			});
 		}
 
@@ -408,17 +446,41 @@
 							[ "passwordEncrypted",
 									MD5($("#signUpPassword").val()) ]);
 		}
-		// insert record to local 
-		function dbInsertSingleRecord(tx) {
-			var recordBeginTimeLong ;
-			if ()
+
+		function convertDateStringToLong(inputString) {
+			if (isNaN((new Date(inputString)).valueOf())) {
+				return (new Date()).valueOf();
+			} else {
+				return (new Date(inputString).valueOf());
+			}
+		}
+
+		// update record to local 
+		function dbUpdateSingleRecord(tx) {
+			var recordBeginTimeLong = convertDateStringToLong(mEditRecord.beginTimeInputString);
+			var recordEndTimeLong = convertDateStringToLong(mEditRecord.endTimeInputString);
 			tx
 					.executeSql(
-							"insert into local_records (userId,title,detail) values (?,?,?); ",
-							[ mUserId, $("#recordEditTitle").val(),
-									$("#recordEditDetail").val() ]);
+							"update local_records set title = ? ,detail = ? ,beginTime = ? ,endTime=? ,modifyStatus=1 where clientId=?; ",
+							[ mEditRecord.title, mEditRecord.detail,
+									recordBeginTimeLong, recordEndTimeLong,
+									mEditRecord.clientId ]);
 		}
-		// create table
+		/**
+		insert record to local
+		 */
+		function dbInsertSingleRecord(tx) {
+			var recordBeginTimeLong = convertDateStringToLong(mEditRecord.beginTimeInputString);
+			tx
+					.executeSql(
+							"insert into local_records (userId,title,detail,beginTime) values (?,?,?,?); ",
+							[ mLocalParameters['userIdString'],
+									mEditRecord.title, mEditRecord.detail,
+									recordBeginTimeLong ]);
+		}
+		/**
+		create table
+		 */
 		function populateDB(tx) {
 			//tx.executeSql('DROP TABLE IF EXISTS local_system_parameters');
 			tx
@@ -426,10 +488,10 @@
 			//tx.executeSql('DROP TABLE IF EXISTS local_records');
 			tx.executeSql('CREATE TABLE IF NOT EXISTS local_records ('
 					+ 'clientId integer primary key,' + 'userId text,'
-					+ ' serverId text UNIQUE,'
+					+ 'serverId text UNIQUE,'
 					+ 'title text not null,detail text,'
 					+ 'beginTime integer default 0,'
-					+ 'endTime integer default 0,'
+					+ 'endTime integer default 0,' + 'state integer default 0,'
 					+ 'serverUpdateTime integer default 0,'
 					+ 'modifyStatus integer default 1 )');
 			checkParametersForInitial(tx);
@@ -437,20 +499,26 @@
 		// form the query
 		function checkParametersForInitial(tx) {
 			mLocalDbProcess = "Get initial parameter";
-			tx.executeSql("SELECT detail from local_system_parameters ;", [],
-					initialParameters, errorCB);
+			tx.executeSql("SELECT title,detail from local_system_parameters ;",
+					[], callbackInitialParameters, errorCB);
 		}
 		// Display the results
-		function initialParameters(tx, results) {
+		function callbackInitialParameters(tx, results) {
 			var len = results.rows.length;
 			if (len == 0) {
-				//alert("debug no record.");
 				//enter register or local use
 				divControl("#divRegister");
 			} else {
+				for (var i = 0; i < len; i++) { // loop as many times as there are row results
+					mLocalParameters[results.rows.item(i).title] = results.rows
+							.item(i).detail;
+				}
+				divRecordFormNew();
 				//list record
 				databaseStatus = "exist";
 				queryRecordAndDisplay();
+				//todo test
+				var test = new syncRecordServer();
 			}
 		}
 		// only accept sorted argument!
@@ -474,11 +542,239 @@
 		// Transaction error callback
 		function errorCB(err) {
 			alert("errorCB:" + err.code + " as:" + mLocalDbProcess);
-			console.log("Error processing SQL: " + err.code);
+			console.log("Error processing SQL: " + err.code + " : "
+					+ err.message);
 		}
 		// Success callback
 		function successCB() {
 		}
+
+		var syncRecordServer = function() {
+			var needSyncCount = 0;
+			var currentServerId = bigInt(0);
+
+			procUpdateFromServer();//first to server will be high priority
+			procServerIdFromServer();
+			syncLocalToServer();
+
+			function syncLocalToServer() {
+				db.transaction(dbLastSyncTime, errorCB)
+			}
+
+			function dbLastSyncTime(tx) {
+				mLocalDbProcess = "dbLastSyncTime";
+				tx
+						.executeSql(
+								"Select serverUpdateTime from local_records where userId=? order by serverUpdateTime desc limit 1 ;",
+								[ mLocalParameters['userIdString'] ],
+								handlerLastSyncTime, errorCB);
+			}
+
+			function handlerLastSyncTime(tx, results) {
+
+				if (results.rows.length > 0) {
+					if (results.rows.item(0).serverUpdateTime > 0) {
+						console.log("handlerLastSyncTime 1");
+						withInputGetNeedSyncRecords(results.rows.item(0).serverUpdateTime);
+					} else {
+						console.log("handlerLastSyncTime 2");
+						withInputGetNeedSyncRecords(0);
+					}
+				} else {
+					console.log("handlerLastSyncTime 3");
+					withInputGetNeedSyncRecords(0);
+				}
+			}
+
+			function withInputGetNeedSyncRecords(lastServerTime) {
+				db.transaction(withInputDbGetNeedSyncRecords(lastServerTime), errorCB);
+			}
+
+			function withInputDbGetNeedSyncRecords(lastServerTime) {
+				return function dbGetNeedSyncRecords(tx) {
+
+					console
+							.log(" withInputDbGetNeedSyncRecords -> dbGetNeedSyncRecords");
+					mLocalDbProcess = "dbGetNeedSyncRecords";
+					tx
+							.executeSql(
+									"Select serverId,title,detail,beginTime,endTime,state,serverUpdateTime from local_records where userId=? and serverId>0 and modifyStatus = 1 order by clientId limit ? ;",
+									[ mLocalParameters['userIdString'],
+											LIMIT_UPDATE_BATCH_SIZE ],
+									withInputHandlerSyncRecordToServer(lastServerTime),
+									errorCB);
+				}
+			}
+
+			function withInputHandlerSyncRecordToServer(lastServerTime) {
+				return function handlerSyncRecordToServer(tx, results) {
+					var syncData = {
+						records : [],
+						lastSyncServerTimeFromClient : lastServerTime
+					};
+					for (var i = 0; i < results.rows.length; i++) {
+						var row = {};
+						row.serverId = results.rows.item(i).serverId;
+						row.title = results.rows.item(i).title;
+						row.detail = results.rows.item(i).detail;
+						row.beginTime = results.rows.item(i).beginTime;
+						row.endTime = results.rows.item(i).endTime;
+						row.state = results.rows.item(i).state;
+						row.serverUpdateTime = results.rows.item(i).serverUpdateTime;
+						syncData.records.push(row);
+					}
+					syncRecordAjax(mServerUrl, receiveSyncRecordRspAjax,
+							ajaxGetNotSuccessMsg, ajaxNetworkError, syncData);
+				}
+			}
+
+			function syncRecordAjax(serverUrl, successAjaxProc, errorRsp,
+					ajaxNetworkError, syncData) {
+				$.ajax({
+					type : "post",
+					url : serverUrl + "sync-record.jsp",
+					async : false,
+					data : JSON.stringify(syncData),
+					dataType : "json",
+					success : function(msg) {
+						if (msg.status == "success") {
+							successAjaxProc(msg);
+						} else {
+							errorRsp(msg);
+						}
+					},
+					error : ajaxNetworkError
+				});
+			}
+
+			function procServerIdFromServer() {
+				getCountNeedServerId();
+			}
+
+			function getCountNeedServerId() {
+				db.transaction(dbGetCountNeedServerId, errorCB);
+			}
+
+			function dbGetCountNeedServerId(tx) {
+				tx
+						.executeSql(
+								"SELECT count(clientId) as total from local_records where userId=? and serverId is null ;",
+								[ mLocalParameters['userIdString'] ],
+								handlerGetCountNeedServerId, errorCB);
+			}
+
+			function handlerGetCountNeedServerId(tx, results) {
+				if (results.rows.length > 0) {
+					if (results.rows.item(0).total > 0) {
+						if (results.rows.item(0).total > LIMIT_UPDATE_BATCH_SIZE) {
+							needSyncCount = LIMIT_UPDATE_BATCH_SIZE;
+						} else {
+							needSyncCount = results.rows.item(0).total;
+						}
+						getServerIdAjax(mServerUrl, receiveGetServerIdAjax,
+								ajaxGetNotSuccessMsg, ajaxNetworkError,
+								needSyncCount, "server_records");
+					}
+				} else {
+					//todo no result ;
+					console
+							.log("handlerGetCountNeedServerId:no record need get serverId .");
+				}
+			}
+
+			function receiveSyncRecordRspAjax(msg) {
+				console.log(msg);
+			}
+
+			function receiveGetServerIdAjax(msg, count) {
+				currentServerId = bigInt(msg.data);
+				needSyncCount = count;
+				if (currentServerId > 0) {
+					db.transaction(dbProcRowNeedServerId, errorCB);
+				}
+			}
+
+			function dbProcRowNeedServerId(tx) {
+				tx
+						.executeSql(
+								"SELECT clientId from local_records where userId=? and serverId is null order by clientId limit ? ;",
+								[ mLocalParameters['userIdString'],
+										needSyncCount ],
+								handlerUpdateClientServerId, errorCB);
+			}
+			function handlerUpdateClientServerId(tx, results) {
+				if (results.rows.length > 0) {
+					//getTransaction(iWork, results, currentServerId);
+					console.log(currentServerId.toString());
+					db.transaction(iWork(results, currentServerId), errorCB)
+
+				} else {
+					//todo no result ;
+					console.log("handlerUpdateClientServerId: now rows .");
+				}
+			}
+
+			function iWork(resultOfClientID, serverId) {
+				return function(tx) {
+					for (var i = 0; i < resultOfClientID.rows.length; i++) {
+						console.log(serverId.toString() + " "
+								+ resultOfClientID.rows.item(i).clientId);
+						tx
+								.executeSql(
+										"update local_records set serverId=? where clientId = ?; ",
+										[
+												serverId.toString(),
+												resultOfClientID.rows.item(i).clientId ]);
+						serverId = serverId.add(1);
+					}
+				}
+			}
+
+			function getServerIdAjax(serverUrl, successGetServerIdAjaxProc,
+					errorRsp, ajaxNetworkError, needCount, tableName) {
+				var oriData = {
+					amount : needCount,
+					keyTitle : tableName
+				};
+				$.ajax({
+					type : "post",
+					url : serverUrl + "get-server-id.jsp",
+					async : false,
+					data : JSON.stringify(oriData),
+					dataType : "json",
+					success : function(msg) {
+						if (msg.status == "success") {
+							successGetServerIdAjaxProc(msg, needCount);
+						} else {
+							errorRsp(msg);
+						}
+					},
+					error : ajaxNetworkError
+				});
+			}
+
+			function ajaxGetNotSuccessMsg(msg) {
+				console.log("ajaxGetNotSuccessMsg:" + msg.status + "-"
+						+ msg.msg);
+				alert("ajaxGetNotSuccessMsg:" + msg.status + "-" + msg.msg);
+			}
+
+			function procUpdateFromServer() {
+				getLastServerUpdateTime();
+			}
+
+			function getLastServerUpdateTime() {
+				//todo
+			}
+		}
+
+		function ajaxNetworkError(XMLHttpRequest, textStatus, errorThrown) {
+			alert("ajaxNetworkError:" + XMLHttpRequest.status + "-"
+					+ XMLHttpRequest.readyState + "-" + textStatus);
+			console.log("ajaxNetworkError:" + XMLHttpRequest.status + "-"
+					+ XMLHttpRequest.readyState + "-" + textStatus);
+		}
+
 		initialAttribute()
 		function initialAttribute() {
 			$("#signUpUserName").attr("placeholder", globalization_username);
