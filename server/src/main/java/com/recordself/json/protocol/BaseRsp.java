@@ -1,6 +1,6 @@
 package com.recordself.json.protocol;
 
-public class Base {
+public class BaseRsp {
   
   private String status;
   private String msg;

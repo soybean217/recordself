@@ -6,6 +6,15 @@ public class User {
   private String password;
   private Long userId;
   private String userIdString;
+  private String passwordEncrypted;
+
+  public String getPasswordEncrypted() {
+    return passwordEncrypted;
+  }
+
+  public void setPasswordEncrypted(String passwordEncrypted) {
+    this.passwordEncrypted = passwordEncrypted;
+  }
 
   public Long getUserId() {
     return userId;
@@ -53,5 +62,9 @@ public class User {
       throw new IllegalArgumentException("password length is wrong .");
     }
     return result;
+  }
+  
+  public String toString(){
+    return "userName:"+this.userName+";"+"passwordEncrypted:"+this.passwordEncrypted+"";
   }
 }

@@ -292,7 +292,9 @@
 		function dbQueryRecord(tx) {
 			tx
 					.executeSql(
-							"SELECT clientId,serverId,title,detail,serverUpdateTime,modifyStatus,beginTime,endTime from local_records where userId=? and state<>-1 order by beginTime desc limit 0,20;",
+							"SELECT clientId,serverId,title,detail,serverUpdateTime,modifyStatus,beginTime,endTime "
+									+ " from local_records where userId=? "
+									+ " and state<>-1 order by beginTime desc limit 0,20;",
 							[ mLocalParameters['userIdString'] ],
 							refreshDataView, errorCB);
 		}
@@ -587,7 +589,8 @@
 			}
 
 			function withInputGetNeedSyncRecords(lastServerTime) {
-				db.transaction(withInputDbGetNeedSyncRecords(lastServerTime), errorCB);
+				db.transaction(withInputDbGetNeedSyncRecords(lastServerTime),
+						errorCB);
 			}
 
 			function withInputDbGetNeedSyncRecords(lastServerTime) {
@@ -598,7 +601,9 @@
 					mLocalDbProcess = "dbGetNeedSyncRecords";
 					tx
 							.executeSql(
-									"Select serverId,title,detail,beginTime,endTime,state,serverUpdateTime from local_records where userId=? and serverId>0 and modifyStatus = 1 order by clientId limit ? ;",
+									"Select serverId,title,detail,beginTime,endTime,state,serverUpdateTime "
+											+ " from local_records where userId=? "
+											+ "and serverId>0 and modifyStatus = 1 order by clientId limit ? ;",
 									[ mLocalParameters['userIdString'],
 											LIMIT_UPDATE_BATCH_SIZE ],
 									withInputHandlerSyncRecordToServer(lastServerTime),
@@ -610,7 +615,8 @@
 				return function handlerSyncRecordToServer(tx, results) {
 					var syncData = {
 						records : [],
-						lastSyncServerTimeFromClient : lastServerTime
+						lastSyncServerTimeFromClient : lastServerTime,
+						clientParameters : mLocalParameters
 					};
 					for (var i = 0; i < results.rows.length; i++) {
 						var row = {};
@@ -769,8 +775,7 @@
 		}
 
 		function ajaxNetworkError(XMLHttpRequest, textStatus, errorThrown) {
-			alert("ajaxNetworkError:" + XMLHttpRequest.status + "-"
-					+ XMLHttpRequest.readyState + "-" + textStatus);
+			//alert("ajaxNetworkError:" + XMLHttpRequest.status + "-"	+ XMLHttpRequest.readyState + "-" + textStatus);
 			console.log("ajaxNetworkError:" + XMLHttpRequest.status + "-"
 					+ XMLHttpRequest.readyState + "-" + textStatus);
 		}

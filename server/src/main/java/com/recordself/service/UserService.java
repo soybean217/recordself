@@ -77,9 +77,69 @@ public class UserService {
           }
         }
       }
-    }else{
+    } else {
       throw new IllegalArgumentException(" Generate user name Id error !");
     }
     return user;
   }
+
+  /**
+   * @return true ; user current . and user id will be filled into user .
+   * */
+  public boolean checkUserCurrent(User user) throws SQLException,IllegalArgumentException {
+    boolean result = false;
+    String sql = "";
+    String password = "";
+    if (user.getPasswordEncrypted() != null && user.getPasswordEncrypted().length() == 32) {
+      sql = "select userId from server_users where userName = ? and password = ?";
+      password = user.getPasswordEncrypted();
+    } else if (user.getPassword() != null & user.getPassword().length() > 0) {
+      sql = "select userId from server_users where userName = ? and password = md5(?)";
+      password = user.getPassword();
+    } else {
+      throw new IllegalArgumentException("Password is not right format !");
+    }
+    PreparedStatement ps = null;
+    Connection con = null;
+    ResultSet rs = null;
+    try {
+      con = ConnectionService.getInstance().getConnectionForLocal();
+      ps = con.prepareStatement(sql);
+      int m = 1;
+      ps.setString(m++, user.getUserName());
+      ps.setString(m++, password);
+      rs = ps.executeQuery();
+      result = checkUserId(user, rs);
+    } finally {
+      if (con != null) {
+        try {
+          con.close();
+        } catch (SQLException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+      }
+    }
+    return result;
+  }
+
+  private boolean checkUserId(User user, ResultSet rs) throws SQLException,IllegalArgumentException {
+    boolean result = false;
+    if (rs.next()) {
+      if (user.getUserIdString() != null && user.getUserIdString().length() > 0) {
+        if (user.getUserIdString().equals(rs.getString("userId"))) {
+          result = true;
+        } else {
+          throw new IllegalArgumentException("Strange , user id not match !");
+        }
+      } else {
+        result = true;
+        user.setUserId(rs.getLong("userId"));
+      }
+    } else {
+      throw new IllegalArgumentException("Can not match valid user !");
+    }
+    return result;
+  }
+
 }
