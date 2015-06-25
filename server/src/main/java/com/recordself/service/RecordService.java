@@ -26,7 +26,7 @@ public class RecordService {
   private ReceivedLocalRecords receivedLocalRecords;
   private User user;
   public final long mCurrent = System.currentTimeMillis();
-  private Map<Long, Record> mReceivedMap = new HashMap<Long, Record>();
+  private Map<String, Record> mReceivedMap = new HashMap<String, Record>();
   private static final String QUERY_COLUMN = " serverId,serverUpdateTime,title,detail,beginTime,endTime,state ";
 
   public User getUser() {
@@ -37,57 +37,28 @@ public class RecordService {
     this.user = user;
   }
 
-  public boolean procReceive() {
-    boolean result = false;
+  public List<Record> procReceive() {
+    List<Record> result = new ArrayList<Record>();
 
+    Map<String, Record> sendClientUpdateRecords = new HashMap<String, Record>();
     List<Record> receiveWithServerIdList = new ArrayList<Record>();
+    queryRecordToClient(sendClientUpdateRecords);
     for (Record record : receivedLocalRecords.getRecords()) {
       if (!(record.getServerId() != null && record.getServerId().length() > 5)) {
         LOG.error("no server id . user id :" + user.getUserId());
       } else {
         // server Id exist
-        LOG.debug(record.getServerId());
         receiveWithServerIdList.add(record);
-        mReceivedMap.put(Long.parseLong(record.getServerId()), record);
+        mReceivedMap.put(record.getServerId(), record);
       }
     }
     if (receiveWithServerIdList.size() > 0) {
       // check server id
-      procReceiveToDb(receiveWithServerIdList);
+      procReceiveToDb(receiveWithServerIdList,sendClientUpdateRecords);
     }
 
-    // add server to client synchronize records
-    queryServerToClientRecord();
-
-    result = true;
+    result.addAll(sendClientUpdateRecords.values());
     return result;
-  }
-
-  private void queryServerToClientRecord() {
-    Connection con = null;
-    try {
-      con = ConnectionService.getInstance().getConnectionForLocal();
-
-      // sync all is not good idea , just demo
-      String sql = "select serverId,title,serverUpdateTime from server_records where serverUpdateTime <> ? and  serverUpdateTime >?";
-      QueryRunner queryRunner = new QueryRunner(true);
-      List<Record> results = (List) queryRunner.query(con, sql, new BeanListHandler(Record.class), mCurrent,
-          receivedLocalRecords.getLastSyncServerTimeFromClient());
-      receivedLocalRecords.getRecords().addAll(results);
-      // LOG.debug(results.size());
-    } catch (Exception e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } finally {
-      if (con != null) {
-        try {
-          con.close();
-        } catch (SQLException e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
-        }
-      }
-    }
   }
 
   private List<Record> getRecordsDbMatchClient(List<Record> receiveWithServerIdList) {
@@ -124,16 +95,16 @@ public class RecordService {
     return results;
   }
 
-  private void procReceiveToDb(List<Record> receiveWithServerIdList) {
+  private void procReceiveToDb(List<Record> receiveWithServerIdList, Map<String, Record> sendClientUpdateRecords) {
     List<Record> matchedFromDb = getRecordsDbMatchClient(receiveWithServerIdList);
 
     // List<Long> results = (List<Long>) queryRunner.query(con, sql.toString(),
     // new ColumnListHandler());
     List<Object[]> updateArray = new ArrayList<Object[]>();
     List<Object[]> insertArray = new ArrayList<Object[]>();
-    Map<Long, Record> sendClientUpdateRecords = new HashMap<Long, Record>();
+    
     identifyRecords(matchedFromDb, updateArray, insertArray, sendClientUpdateRecords);
-    queryRecordToClient(sendClientUpdateRecords);
+    
     if (updateArray.size() > 0) {
       updateServerDb(updateArray);
     }
@@ -174,7 +145,7 @@ public class RecordService {
     }
   }
 
-  private void queryRecordToClient(Map<Long, Record> sendClientUpdateRecords) {
+  private void queryRecordToClient(Map<String, Record> sendClientUpdateRecords) {
     Connection con = null;
     try {
       con = ConnectionService.getInstance().getConnectionForLocal();
@@ -184,7 +155,7 @@ public class RecordService {
       List<Record> results = (List) queryRunner.query(con, sql, new BeanListHandler(Record.class), user.getUserId(),
           receivedLocalRecords.getLastSyncServerTimeFromClient());
       for (Record cell : results) {
-        sendClientUpdateRecords.put(Long.parseLong(cell.getServerId()), cell);
+        sendClientUpdateRecords.put(cell.getServerId(), cell);
       }
     } catch (Exception e) {
       // TODO Auto-generated catch block
@@ -202,21 +173,23 @@ public class RecordService {
   }
 
   private void identifyRecords(List<Record> matchedFromDb, List<Object[]> updateArray, List<Object[]> insertArray,
-      Map<Long, Record> sendClientUpdateRecords) {
+      Map<String, Record> sendClientUpdateRecords) {
     for (Record cell : matchedFromDb) {
-
       if (mReceivedMap.containsKey(cell.getServerId())) {
         if (mReceivedMap.get(cell.getServerId()).getServerUpdateTime() == cell.getServerUpdateTime()) {
-          Object[] currentSql = new Object[] { mReceivedMap.get(cell.getServerId()).getTitle(), mReceivedMap.get(cell.getServerId()).getDetail(),
-              mReceivedMap.get(cell.getServerId()).getBeginTime(), mReceivedMap.get(cell.getServerId()).getEndTime(),
-              mReceivedMap.get(cell.getServerId()).getState(), mCurrent, cell.getServerId() };
+          Object[] currentSql = new Object[] { mReceivedMap.get(cell.getServerId()).getTitle(),
+              mReceivedMap.get(cell.getServerId()).getDetail(), mReceivedMap.get(cell.getServerId()).getBeginTime(),
+              mReceivedMap.get(cell.getServerId()).getEndTime(), mReceivedMap.get(cell.getServerId()).getState(),
+              mCurrent, cell.getServerId() };
           updateArray.add(currentSql);
+          mReceivedMap.get(cell.getServerId()).setServerUpdateTime(mCurrent);
+          sendClientUpdateRecords.put(cell.getServerId(), mReceivedMap.get(cell.getServerId()));
         } else {
-          sendClientUpdateRecords.put(Long.parseLong(cell.getServerId()), cell);
+          sendClientUpdateRecords.put(cell.getServerId(), cell);
         }
         mReceivedMap.remove(cell.getServerId());
       } else {
-        sendClientUpdateRecords.put(Long.parseLong(cell.getServerId()), cell);
+        sendClientUpdateRecords.put(cell.getServerId(), cell);
       }
       // forQueryMap.get(cell).setServerUpdateTime(mCurrent);
     }
@@ -230,15 +203,11 @@ public class RecordService {
       Object[][] insertAll = new Object[mReceivedMap.size()][];
       int i = 0;
       for (Record cell : mReceivedMap.values()) {
-        LOG.debug(mReceivedMap.get(cell.getServerId()));
-        Object[] currentForSql = new Object[] { mReceivedMap.get(cell.getServerId()).getServerId(), user.getUserId(),
-            mReceivedMap.get(cell.getServerId()).getTitle(), mReceivedMap.get(cell.getServerId()).getDetail(),
-            mReceivedMap.get(cell.getServerId()).getBeginTime(), mReceivedMap.get(cell.getServerId()).getEndTime(),
-            mReceivedMap.get(cell.getServerId()).getState(), mCurrent };
+        Object[] currentForSql = new Object[] { cell.getServerId(), user.getUserId(), cell.getTitle(),
+            cell.getDetail(), cell.getBeginTime(), cell.getEndTime(), cell.getState(), mCurrent };
         insertAll[i] = currentForSql;
         i++;
       }
-      // there is a bug : if client do not receive , record will repeat .
       queryRunner
           .batch(
               con,

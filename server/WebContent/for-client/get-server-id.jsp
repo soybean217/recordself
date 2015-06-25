@@ -15,8 +15,9 @@
     applyServerIdRsp.setData(Long.toString(GenerateIdService.getInstance().generateNew(Integer.parseInt(ConfigManager.getConfigData("server.id")), receive.getString("keyTitle"), receive.getInt("amount"))));
     applyServerIdRsp.setStatus("success");
     Gson gson = new Gson();
-    out.println(gson.toJson(applyServerIdRsp));
-    LOG.debug(gson.toJson(applyServerIdRsp));
+    String rsp = gson.toJson(applyServerIdRsp);
+    out.println(rsp);
+    LOG.debug(rsp);
   } catch (Exception e) {
     //out.println("An exception occurred: " + e.getMessage());
     LOG.error("An exception occurred: " + e.getMessage());

@@ -1,3 +1,4 @@
+<%@page import="com.recordself.json.protocol.BaseRsp"%>
 <%@page import="com.recordself.service.RecordService"%>
 <%@page import="com.recordself.json.protocol.ReceivedLocalRecords"%>
 <%@page import="com.recordself.service.UserService"%>
@@ -22,13 +23,19 @@
     Gson gson = new Gson();
     //JsonElement jsonElement = receiveJson.get("clientParameters");
     User user = gson.fromJson(jsonClientParameters, User.class);
+    LOG.info(user);
     UserService userService = new UserService();
     if (userService.checkUserCurrent(user)) {
       ReceivedLocalRecords receivedLocalRecords = gson.fromJson(info, ReceivedLocalRecords.class);
       RecordService recordService = new RecordService();
       recordService.setReceivedLocalRecords(receivedLocalRecords);
       recordService.setUser(user);
-      recordService.procReceive();
+      BaseRsp baseRsp = new BaseRsp();
+      baseRsp.setStatus("success");
+      baseRsp.setData(recordService.procReceive());
+      String rsp = gson.toJson(baseRsp);
+      out.println(rsp);
+      LOG.debug(rsp); 
     } else {
       String msg = "check user failure!";
       LOG.info(msg);

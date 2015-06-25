@@ -1,6 +1,9 @@
 var globalization_password = "Password";
 var globalization_confirm_password = "Confirm Password";
+var globalization_sign_in = "Sign In";
 var globalization_sign_up = "Sign Up";
+var globalization_sign_out = "Sign out";
+var globalization_modify_password = "Modify password";
 var globalization_sign_in_exist = "Sign In With Exist Account";
 var globalization_username = "Username";
 var globalization_begin = "Begin";

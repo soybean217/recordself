@@ -126,9 +126,10 @@ public class UserService {
   private boolean checkUserId(User user, ResultSet rs) throws SQLException,IllegalArgumentException {
     boolean result = false;
     if (rs.next()) {
-      if (user.getUserIdString() != null && user.getUserIdString().length() > 0) {
-        if (user.getUserIdString().equals(rs.getString("userId"))) {
+      if (user.getUserId()  > 0) {
+        if (user.getUserId()==rs.getLong("userId")) {
           result = true;
+          user.setUserId(user.getUserId());
         } else {
           throw new IllegalArgumentException("Strange , user id not match !");
         }

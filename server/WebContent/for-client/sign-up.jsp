@@ -1,3 +1,5 @@
+<%@page import="com.google.gson.LongSerializationPolicy"%>
+<%@page import="com.google.gson.GsonBuilder"%>
 <%@page import="com.recordself.json.protocol.SignUpRsp"%>
 <%@page import="com.recordself.service.UserService"%>
 <%@page import="com.recordself.entity.User"%>
@@ -15,8 +17,12 @@
     user.setPassword(null);
     signUpRsp.setData(user);
     signUpRsp.setStatus("success");
-    out.println(gson.toJson(signUpRsp));
-    LOG.debug(gson.toJson(signUpRsp));
+    GsonBuilder gsonBuilder = new GsonBuilder();
+    gsonBuilder.setLongSerializationPolicy( LongSerializationPolicy.STRING );
+    Gson gsonRsp = gsonBuilder.create();
+    String rsp = gsonRsp.toJson(signUpRsp);
+    out.println(rsp);
+    LOG.debug(rsp);
   } catch (Exception e) {
     //out.println("An exception occurred: " + e.getMessage());
     LOG.error("An exception occurred: " + e.getMessage());

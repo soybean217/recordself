@@ -5,7 +5,7 @@ public class User {
   private String userName;
   private String password;
   private Long userId;
-  private String userIdString;
+//  private String userIdString;
   private String passwordEncrypted;
 
   public String getPasswordEncrypted() {
@@ -22,16 +22,7 @@ public class User {
 
   public void setUserId(Long userId) {
     this.userId = userId;
-    this.userIdString = Long.toString(userId);
-  }
-
-  public String getUserIdString() {
-    return userIdString;
-  }
-
-  public void setUserIdString(String userIdString) {
-    this.userIdString = userIdString;
-    this.userId = Long.parseLong(userIdString);
+//    this.userIdString = Long.toString(userId);
   }
 
   public String getUserName() {
@@ -63,8 +54,10 @@ public class User {
     }
     return result;
   }
-  
-  public String toString(){
-    return "userName:"+this.userName+";"+"passwordEncrypted:"+this.passwordEncrypted+"";
+
+  @Override
+  public String toString() {
+    return "User [userName=" + userName + ", password=" + password + ", userId=" + userId + ", passwordEncrypted=" + passwordEncrypted + "]";
   }
+  
 }
