@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.apache.log4j.Logger;
 import org.common.util.ConfigManager;
 import org.common.util.ConnectionService;
 import org.common.util.GenerateIdService;
@@ -12,6 +13,8 @@ import org.common.util.GenerateIdService;
 import com.recordself.entity.User;
 
 public class UserService {
+  
+  private static final Logger LOG = Logger.getLogger(UserService.class);
 
   private boolean checkAvailableUserName(String userName) {
     boolean result = false;
@@ -126,15 +129,16 @@ public class UserService {
   private boolean checkUserId(User user, ResultSet rs) throws SQLException,IllegalArgumentException {
     boolean result = false;
     if (rs.next()) {
-      if (user.getUserId()  > 0) {
+      if (user.getUserId()!=null&&user.getUserId()  > 0) {
         if (user.getUserId()==rs.getLong("userId")) {
           result = true;
-          user.setUserId(user.getUserId());
+          user.setPassword(null);
         } else {
           throw new IllegalArgumentException("Strange , user id not match !");
         }
       } else {
         result = true;
+        user.setPassword(null);
         user.setUserId(rs.getLong("userId"));
       }
     } else {

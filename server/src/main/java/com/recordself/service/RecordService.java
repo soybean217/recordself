@@ -105,12 +105,13 @@ public class RecordService {
     
     identifyRecords(matchedFromDb, updateArray, insertArray, sendClientUpdateRecords);
     
+    LOG.debug(updateArray.size());
     if (updateArray.size() > 0) {
       updateServerDb(updateArray);
     }
 
     if (mReceivedMap.size() > 0) {
-      batchInsertNewRecords();
+      batchInsertNewRecords(sendClientUpdateRecords);
     }
 
   }
@@ -124,6 +125,7 @@ public class RecordService {
       Object[][] updateAll = new Object[updateArray.size()][];
       for (int i = 0; i < updateArray.size(); i++) {
         updateAll[i] = updateArray.get(i);
+        LOG.debug(updateAll[i]);
       }
       queryRunner
           .batch(
@@ -175,12 +177,16 @@ public class RecordService {
   private void identifyRecords(List<Record> matchedFromDb, List<Object[]> updateArray, List<Object[]> insertArray,
       Map<String, Record> sendClientUpdateRecords) {
     for (Record cell : matchedFromDb) {
+      LOG.debug(cell);
       if (mReceivedMap.containsKey(cell.getServerId())) {
-        if (mReceivedMap.get(cell.getServerId()).getServerUpdateTime() == cell.getServerUpdateTime()) {
+        LOG.debug(cell+" "+mReceivedMap.get(cell.getServerId()).getServerUpdateTime()+" "+cell.getServerUpdateTime());
+        if (mReceivedMap.get(cell.getServerId()).getServerUpdateTime().equals(cell.getServerUpdateTime())) {
+          LOG.debug(cell);
           Object[] currentSql = new Object[] { mReceivedMap.get(cell.getServerId()).getTitle(),
               mReceivedMap.get(cell.getServerId()).getDetail(), mReceivedMap.get(cell.getServerId()).getBeginTime(),
               mReceivedMap.get(cell.getServerId()).getEndTime(), mReceivedMap.get(cell.getServerId()).getState(),
               mCurrent, cell.getServerId() };
+          LOG.debug(currentSql);
           updateArray.add(currentSql);
           mReceivedMap.get(cell.getServerId()).setServerUpdateTime(mCurrent);
           sendClientUpdateRecords.put(cell.getServerId(), mReceivedMap.get(cell.getServerId()));
@@ -195,7 +201,7 @@ public class RecordService {
     }
   }
 
-  private void batchInsertNewRecords() {
+  private void batchInsertNewRecords(Map<String, Record> sendClientUpdateRecords) {
     Connection con = null;
     try {
       con = ConnectionService.getInstance().getConnectionForLocal();
@@ -207,6 +213,8 @@ public class RecordService {
             cell.getDetail(), cell.getBeginTime(), cell.getEndTime(), cell.getState(), mCurrent };
         insertAll[i] = currentForSql;
         i++;
+        cell.setServerUpdateTime(mCurrent);
+        sendClientUpdateRecords.put(cell.getServerId(), cell);
       }
       queryRunner
           .batch(
