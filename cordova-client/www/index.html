@@ -51,7 +51,7 @@
 				</script>
 			</h2>
 			<label for="inputEmail" class="sr-only">Email address</label> <input
-				type="email" id="signInUserName" class="form-control"
+				type="text" id="signInUserName" class="form-control"
 				name="signInUserName" required autofocus> <label
 				for="inputPassword" class="sr-only"><script>
 					document.write(globalization_password);
@@ -159,6 +159,9 @@
 		var divArray = new Array();
 		var databaseStatus = "empty";
 		var mJsonMsg, mEditRecord, mLocalDbProcess, mLocalParameters, mDisplayData, mRecordDataSet, mTable, mNeedServerIdCount;
+		var mLastSyncTime = (new Date()).valueOf();
+		var mSyncStatus = 'stop';
+		var mSyncTimeout = 60000;
 		mLocalParameters = {};
 		divArray.push($("#divSignIn"));
 		divArray.push($("#divSignUp"));
@@ -308,8 +311,8 @@
 							"SELECT clientId,serverId,title,detail,serverUpdateTime,modifyStatus,beginTime,endTime "
 									+ " from local_records where userId=? "
 									+ " and state<>-1 order by beginTime desc limit 0,20;",
-							[ mLocalParameters['userIdString'] ],
-							refreshDataView, errorCB);
+							[ mLocalParameters['userId'] ], refreshDataView,
+							errorCB);
 		}
 
 		// Display the results
@@ -350,12 +353,7 @@
 			mTable.rows.add(mRecordDataSet);
 			mTable.draw();
 
-			//mTable.fnDestroy();
-
-			//$('#tableRecord').dataTable().destroy();
-			//divDisplayRecordList();
-			//$('#tableRecord').dataTable().data(mRecordDataSet);
-			//$('#tableRecord').dataTable().fnDraw();
+			var syncThread = new syncRecordServer();
 		}
 
 		function formSignUpFormInitial() {
@@ -421,11 +419,7 @@
 				success : function(msg) {
 					if (msg.status == "success") {
 						if (databaseStatus == "empty") {
-							mJsonMsg = msg;
-							// insert account to local database 
-							mLocalDbProcess = "insertLocalUserAccout";
-							db.transaction(dbInsertAccountInfo, errorCB);
-							queryRecordAndDisplay();
+							signInOrUpSuccess(msg, $("#signInUserName").val());
 						} else {
 							//
 						}
@@ -450,12 +444,7 @@
 				success : function(msg) {
 					if (msg.status == "success") {
 						if (databaseStatus == "empty") {
-							mJsonMsg = msg;
-							mLocalParameters['userIdString'] = msg.data.userId;
-							// insert account to local database 
-							mLocalDbProcess = "insertLocalUserAccout";
-							db.transaction(dbInsertAccountInfo, errorCB);
-							queryRecordAndDisplay();
+							signInOrUpSuccess(msg, $("#signUpUserName").val());
 						} else {
 							//
 						}
@@ -465,6 +454,16 @@
 				},
 				error : ajaxNetworkError
 			});
+		}
+
+		function signInOrUpSuccess(msg, password) {
+			mJsonMsg = msg;
+			mLocalParameters['userId'] = msg.data.userId;
+			// insert account to local database 
+			mLocalDbProcess = "insertLocalUserAccout";
+			db.transaction(dbInsertAccountInfo(msg.data.userName, password),
+					errorCB);
+			queryRecordAndDisplay();
 		}
 
 		//test on chrome
@@ -495,20 +494,22 @@
 			db.transaction(populateDB, errorCB, successCB);
 		}
 		// insert account info to local 
-		function dbInsertAccountInfo(tx) {
-			tx
-					.executeSql(
-							'insert into local_system_parameters (title,detail) values (?,?)',
-							[ "userName", $("#signUpUserName").val() ]);
-			tx
-					.executeSql(
-							'insert into local_system_parameters (title,detail) values (?,?)',
-							[ "userId", mJsonMsg.data.userId ]);
-			tx
-					.executeSql(
-							'insert into local_system_parameters (title,detail) values (?,?)',
-							[ "passwordEncrypted",
-									MD5($("#signUpPassword").val()) ]);
+		function dbInsertAccountInfo(userName, password) {
+			return function(tx) {
+				//,$("#signUpUserName").val()
+				tx
+						.executeSql(
+								'insert into local_system_parameters (title,detail) values (?,?)',
+								[ "userName", userName ]);
+				tx
+						.executeSql(
+								'insert into local_system_parameters (title,detail) values (?,?)',
+								[ "userId", mJsonMsg.data.userId ]);
+				tx
+						.executeSql(
+								'insert into local_system_parameters (title,detail) values (?,?)',
+								[ "passwordEncrypted", MD5(password) ]);
+			}
 		}
 
 		function convertDateStringToLong(inputString) {
@@ -523,6 +524,7 @@
 		function dbUpdateSingleRecord(tx) {
 			var recordBeginTimeLong = convertDateStringToLong(mEditRecord.beginTimeInputString);
 			var recordEndTimeLong = convertDateStringToLong(mEditRecord.endTimeInputString);
+			console.log(""+recordBeginTimeLong+" "+recordEndTimeLong);
 			tx
 					.executeSql(
 							"update local_records set title = ? ,detail = ? ,beginTime = ? ,endTime=? ,modifyStatus=1 where clientId=?; ",
@@ -538,9 +540,8 @@
 			tx
 					.executeSql(
 							"insert into local_records (userId,title,detail,beginTime) values (?,?,?,?); ",
-							[ mLocalParameters['userIdString'],
-									mEditRecord.title, mEditRecord.detail,
-									recordBeginTimeLong ]);
+							[ mLocalParameters['userId'], mEditRecord.title,
+									mEditRecord.detail, recordBeginTimeLong ]);
 		}
 		/**
 		create table
@@ -585,14 +586,11 @@
 				for (var i = 0; i < len; i++) { // loop as many times as there are row results
 					mLocalParameters[results.rows.item(i).title] = results.rows
 							.item(i).detail;
-					console.log(results.rows.item(i).title+":"+results.rows.item(i).detail);
 				}
 				divRecordFormNew();
 				//list record
 				databaseStatus = "exist";
 				queryRecordAndDisplay();
-				//todo test
-				var test = new syncRecordServer();
 			}
 		}
 		// only accept sorted argument!
@@ -623,12 +621,18 @@
 		}
 
 		var syncRecordServer = function() {
-			var needSyncCount = 0;
-			var currentServerId = bigInt(0);
+			console.log("mSyncStatus:"+mSyncStatus+" "+((new Date()).valueOf() - mLastSyncTime));
+			if (mSyncStatus == 'stop'
+					|| ((new Date()).valueOf() - mLastSyncTime > mSyncTimeout)) {
+				console.log("begin sync");
+				mSyncStatus = 'work';
+				mLastSyncTime = (new Date()).valueOf();
+				var needSyncCount = 0;
+				var currentServerId = bigInt(0);
 
-			procUpdateFromServer();//first to server will be high priority
-			procServerIdFromServer();
-			syncLocalToServer();
+				procServerIdFromServer();
+				//syncLocalToServer();
+			}
 
 			function syncLocalToServer() {
 				db.transaction(dbLastSyncTime, errorCB);
@@ -639,7 +643,7 @@
 				tx
 						.executeSql(
 								"Select serverUpdateTime from local_records where userId=? order by serverUpdateTime desc limit 1 ;",
-								[ mLocalParameters['userIdString'] ],
+								[ mLocalParameters['userId'] ],
 								handlerLastSyncTime, errorCB);
 			}
 
@@ -669,7 +673,7 @@
 									"Select serverId,title,detail,beginTime,endTime,state,serverUpdateTime "
 											+ " from local_records where userId=? "
 											+ "and serverId>0 and modifyStatus = 1 order by clientId limit ? ;",
-									[ mLocalParameters['userIdString'],
+									[ mLocalParameters['userId'],
 											LIMIT_UPDATE_BATCH_SIZE ],
 									withInputHandlerSyncRecordToServer(lastServerTime),
 									errorCB);
@@ -685,6 +689,7 @@
 					};
 					for (var i = 0; i < results.rows.length; i++) {
 						var row = {};
+						console.log(results.rows.item(i).title);
 						row.serverId = results.rows.item(i).serverId;
 						row.title = results.rows.item(i).title;
 						row.detail = results.rows.item(i).detail;
@@ -719,10 +724,6 @@
 			}
 
 			function procServerIdFromServer() {
-				getCountNeedServerId();
-			}
-
-			function getCountNeedServerId() {
 				db.transaction(dbGetCountNeedServerId, errorCB);
 			}
 
@@ -730,7 +731,7 @@
 				tx
 						.executeSql(
 								"SELECT count(clientId) as total from local_records where userId=? and serverId is null ;",
-								[ mLocalParameters['userIdString'] ],
+								[ mLocalParameters['userId'] ],
 								handlerGetCountNeedServerId, errorCB);
 			}
 
@@ -745,11 +746,15 @@
 						getServerIdAjax(mServerUrl, receiveGetServerIdAjax,
 								ajaxGetNotSuccessMsg, ajaxNetworkError,
 								needSyncCount, "server_records");
+					} else {
+						//todo no result ;
+						console
+								.log("handlerGetCountNeedServerId:no record need get serverId .");
+						syncLocalToServer();
 					}
 				} else {
 					//todo no result ;
-					console
-							.log("handlerGetCountNeedServerId:no record need get serverId .");
+					console.log("error ! handlerGetCountNeedServerId");
 				}
 			}
 
@@ -760,6 +765,7 @@
 								errorCB);
 					}
 				}
+				mSyncStatus = 'stop';
 			}
 			function dbProcReceivedRecord(receiveRecord) {
 				return function(tx) {
@@ -767,7 +773,7 @@
 							.executeSql(
 									"SELECT 1 from `local_records` where serverId=? and userId=? ;",
 									[ receiveRecord.serverId,
-											mLocalParameters['userIdString'] ],
+											mLocalParameters['userId'] ],
 									updateOrInsertReceivedRecord(receiveRecord),
 									errorCB);
 				}
@@ -790,7 +796,7 @@
 						tx
 								.executeSql(
 										"insert into local_records (userId,title,detail,beginTime,endTime,state,serverUpdateTime,modifyStatus,serverId) values (?,?,?,?,?,?,?,0,?); ",
-										[ mLocalParameters['userIdString'],
+										[ mLocalParameters['userId'],
 												receiveRecord.title,
 												receiveRecord.detail,
 												receiveRecord.beginTime,
@@ -814,15 +820,14 @@
 				tx
 						.executeSql(
 								"SELECT clientId from local_records where userId=? and serverId is null order by clientId limit ? ;",
-								[ mLocalParameters['userIdString'],
-										needSyncCount ],
+								[ mLocalParameters['userId'], needSyncCount ],
 								handlerUpdateClientServerId, errorCB);
 			}
 			function handlerUpdateClientServerId(tx, results) {
 				if (results.rows.length > 0) {
 					//getTransaction(iWork, results, currentServerId);
 					db.transaction(iWork(results, currentServerId), errorCB)
-
+					syncLocalToServer();
 				} else {
 					//todo no result ;
 					console.log("handlerUpdateClientServerId: no rows .");
@@ -866,19 +871,11 @@
 				});
 			}
 
-			function ajaxGetNotSuccessMsg(msg) {
-				console.log("ajaxGetNotSuccessMsg:" + msg.status + "-"
-						+ msg.msg);
-				alert("ajaxGetNotSuccessMsg:" + msg.status + "-" + msg.msg);
-			}
+		}
 
-			function procUpdateFromServer() {
-				getLastServerUpdateTime();
-			}
-
-			function getLastServerUpdateTime() {
-				//todo
-			}
+		function ajaxGetNotSuccessMsg(msg) {
+			console.log("ajaxGetNotSuccessMsg:" + msg.status + "-" + msg.msg);
+			alert("ajaxGetNotSuccessMsg:" + msg.status + "-" + msg.msg);
 		}
 
 		function ajaxNetworkError(XMLHttpRequest, textStatus, errorThrown) {

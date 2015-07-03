@@ -177,16 +177,12 @@ public class RecordService {
   private void identifyRecords(List<Record> matchedFromDb, List<Object[]> updateArray, List<Object[]> insertArray,
       Map<String, Record> sendClientUpdateRecords) {
     for (Record cell : matchedFromDb) {
-      LOG.debug(cell);
       if (mReceivedMap.containsKey(cell.getServerId())) {
-        LOG.debug(cell+" "+mReceivedMap.get(cell.getServerId()).getServerUpdateTime()+" "+cell.getServerUpdateTime());
         if (mReceivedMap.get(cell.getServerId()).getServerUpdateTime().equals(cell.getServerUpdateTime())) {
-          LOG.debug(cell);
           Object[] currentSql = new Object[] { mReceivedMap.get(cell.getServerId()).getTitle(),
               mReceivedMap.get(cell.getServerId()).getDetail(), mReceivedMap.get(cell.getServerId()).getBeginTime(),
               mReceivedMap.get(cell.getServerId()).getEndTime(), mReceivedMap.get(cell.getServerId()).getState(),
               mCurrent, cell.getServerId() };
-          LOG.debug(currentSql);
           updateArray.add(currentSql);
           mReceivedMap.get(cell.getServerId()).setServerUpdateTime(mCurrent);
           sendClientUpdateRecords.put(cell.getServerId(), mReceivedMap.get(cell.getServerId()));
