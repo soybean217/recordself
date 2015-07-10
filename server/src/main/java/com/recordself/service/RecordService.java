@@ -105,7 +105,6 @@ public class RecordService {
     
     identifyRecords(matchedFromDb, updateArray, insertArray, sendClientUpdateRecords);
     
-    LOG.debug(updateArray.size());
     if (updateArray.size() > 0) {
       updateServerDb(updateArray);
     }
@@ -125,7 +124,6 @@ public class RecordService {
       Object[][] updateAll = new Object[updateArray.size()][];
       for (int i = 0; i < updateArray.size(); i++) {
         updateAll[i] = updateArray.get(i);
-        LOG.debug(updateAll[i]);
       }
       queryRunner
           .batch(

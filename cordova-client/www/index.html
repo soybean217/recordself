@@ -120,18 +120,6 @@
 				<div class="btn-group" role="group" aria-label="...">
 					<button type="submit" class="btn btn-default">update</button>
 					<button type="button" class="btn btn-warning" id="recordEditDelete">delete</button>
-					<button type="button" class="btn btn-success">if no end
-						time</button>
-					<div class="btn-group" role="group">
-						<button type="button" class="btn btn-default dropdown-toggle"
-							data-toggle="dropdown" aria-expanded="false">
-							Dropdown <span class="caret"></span>
-						</button>
-						<ul class="dropdown-menu" role="menu">
-							<li><a href="#">Dropdown link</a></li>
-							<li><a href="#">Dropdown link</a></li>
-						</ul>
-					</div>
 				</div>
 			</div>
 			<button class="btn btn-lg btn-primary btn-block" type="submit"
@@ -214,8 +202,7 @@
 			});
 			$("#recordEditDelete").click(function() {
 				deleteRecordWithId();
-				queryRecordAndDisplay();
-				divRecordFormNew();
+
 			})
 		}
 		function deleteRecordWithId() {
@@ -227,10 +214,16 @@
 					.executeSql(
 							"update local_records set state = -1 ,modifyStatus=1 where clientId = ?; ",
 							[ $("#recordEditId").val() ]);
+			queryRecordAndDisplay();
+			divRecordFormNew();
 		}
 		function divRecordFormNew() {
 			$("#recordEditButtonGroup").hide();
 			$("#recordEditTimePicker").hide();
+			$("#recordEditAddNew").show();
+			$("#recordEditTitle").val(null);
+			$("#recordEditId").val(null);
+			$("#recordEditDetail").val(null);
 			$(".form_datetime").datetimepicker({
 				format : 'yyyy-mm-dd hh:ii',
 				autoclose : 1,
@@ -278,7 +271,6 @@
 						clientId : $("#recordEditId").val()
 					};
 					editRecordProcess();
-					queryRecordAndDisplay();
 				}
 			});
 		}
@@ -524,13 +516,14 @@
 		function dbUpdateSingleRecord(tx) {
 			var recordBeginTimeLong = convertDateStringToLong(mEditRecord.beginTimeInputString);
 			var recordEndTimeLong = convertDateStringToLong(mEditRecord.endTimeInputString);
-			console.log(""+recordBeginTimeLong+" "+recordEndTimeLong);
 			tx
 					.executeSql(
 							"update local_records set title = ? ,detail = ? ,beginTime = ? ,endTime=? ,modifyStatus=1 where clientId=?; ",
 							[ mEditRecord.title, mEditRecord.detail,
 									recordBeginTimeLong, recordEndTimeLong,
 									mEditRecord.clientId ]);
+			queryRecordAndDisplay();
+			divRecordFormNew();
 		}
 		/**
 		insert record to local
@@ -542,6 +535,8 @@
 							"insert into local_records (userId,title,detail,beginTime) values (?,?,?,?); ",
 							[ mLocalParameters['userId'], mEditRecord.title,
 									mEditRecord.detail, recordBeginTimeLong ]);
+			queryRecordAndDisplay();
+			divRecordFormNew();
 		}
 		/**
 		create table
@@ -621,7 +616,8 @@
 		}
 
 		var syncRecordServer = function() {
-			console.log("mSyncStatus:"+mSyncStatus+" "+((new Date()).valueOf() - mLastSyncTime));
+			console.log("mSyncStatus:" + mSyncStatus + " "
+					+ ((new Date()).valueOf() - mLastSyncTime));
 			if (mSyncStatus == 'stop'
 					|| ((new Date()).valueOf() - mLastSyncTime > mSyncTimeout)) {
 				console.log("begin sync");
