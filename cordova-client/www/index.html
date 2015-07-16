@@ -3,7 +3,7 @@
 <head>
 <script>
 	//parameters
-	var mServerUrl = "http://10.0.0.2:8080/recordself-server/for-client/";
+	var mServerUrl = "http://nowiamdoing.com//for-client/";
 </script>
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -106,20 +106,35 @@
 			<label for="inputEmail" class="sr-only"><script>
 				document.write(globalization_username);
 			</script> </label> <input type="text" id="recordEditTitle" class="form-control"
-				name="recordEditTitle" placeholder="Title" autofocus> <input
+				name="recordEditTitle"  autofocus> <input
 				type="text" id="recordEditDetail" class="form-control"
-				name="recordEditDetail" placeholder="Detail"><input
+				name="recordEditDetail" ><input
 				type="hidden" id="recordEditId" class="form-control"
 				name="recordEditId">
 			<div class="row" id="recordEditTimePicker">
-				Begin time:<input size="14" type="text" id="recordEditBeginTime"
-					class="form_datetime"> End time:<input size="14"
-					type="text" id="recordEditEndTime" class="form_datetime">
+				<script>
+					document.write(globalization_begin_time);
+				</script>
+				:<input size="14" type="text" id="recordEditBeginTime"
+					class="form_datetime">
+				<script>
+					document.write(globalization_end_time);
+				</script>
+				:<input size="14" type="text" id="recordEditEndTime"
+					class="form_datetime">
 			</div>
 			<div class="row" id="recordEditButtonGroup">
 				<div class="btn-group" role="group" aria-label="...">
-					<button type="submit" class="btn btn-default">update</button>
-					<button type="button" class="btn btn-warning" id="recordEditDelete">delete</button>
+					<button type="submit" class="btn btn-default">
+						<script>
+							document.write(globalization_update);
+						</script>
+					</button>
+					<button type="button" class="btn btn-warning" id="recordEditDelete">
+						<script>
+							document.write(globalization_delete);
+						</script>
+					</button>
 				</div>
 			</div>
 			<button class="btn btn-lg btn-primary btn-block" type="submit"
@@ -128,9 +143,6 @@
 					document.write(globalization_begin);
 				</script>
 			</button>
-			<script>
-				//$("#recordEditBeginTime").val(    new Date().Format("yyyy-MM-dd hh:mm"));
-			</script>
 		</form>
 	</div>
 	<div class="container" id="divDisplayRecordList">
@@ -176,13 +188,13 @@
 				"columns" : [ {
 					"title" : "Id"
 				}, {
-					"title" : "Title"
+					"title" : globalization_title
 				}, {
-					"title" : "Detail"
+					"title" : globalization_detail
 				}, {
-					"title" : "Begin"
+					"title" : globalization_begin_time
 				}, {
-					"title" : "End"
+					"title" : globalization_end_time
 				} ],
 				"columnDefs" : [ {
 					"targets" : [ 0 ],
@@ -886,6 +898,8 @@
 			$("#signInPassword").attr("placeholder", globalization_password);
 			$("#signUpUserName").attr("placeholder", globalization_username);
 			$("#signUpPassword").attr("placeholder", globalization_password);
+			$("#recordEditTitle").attr("placeholder", globalization_title);
+			$("#recordEditDetail").attr("placeholder", globalization_detail);
 			$("#signUpConfirmPassword").attr("placeholder",
 					globalization_confirm_password);
 		}
