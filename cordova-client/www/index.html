@@ -467,7 +467,6 @@
 			mLocalDbProcess = "insertLocalUserAccout";
 			db.transaction(dbInsertAccountInfo(msg.data.userName, password),
 					errorCB);
-			queryRecordAndDisplay();
 		}
 
 		//test on chrome
@@ -513,6 +512,9 @@
 						.executeSql(
 								'insert into local_system_parameters (title,detail) values (?,?)',
 								[ "passwordEncrypted", MD5(password) ]);
+				mLocalParameters['userName'] = userName;
+				mLocalParameters['passwordEncrypted'] = MD5(password);
+				queryRecordAndDisplay();
 			}
 		}
 
