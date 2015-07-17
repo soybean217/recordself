@@ -106,9 +106,8 @@
 			<label for="inputEmail" class="sr-only"><script>
 				document.write(globalization_username);
 			</script> </label> <input type="text" id="recordEditTitle" class="form-control"
-				name="recordEditTitle"  autofocus> <input
-				type="text" id="recordEditDetail" class="form-control"
-				name="recordEditDetail" ><input
+				name="recordEditTitle" autofocus> <input type="text"
+				id="recordEditDetail" class="form-control" name="recordEditDetail"><input
 				type="hidden" id="recordEditId" class="form-control"
 				name="recordEditId">
 			<div class="row" id="recordEditTimePicker">
@@ -595,6 +594,8 @@
 				for (var i = 0; i < len; i++) { // loop as many times as there are row results
 					mLocalParameters[results.rows.item(i).title] = results.rows
 							.item(i).detail;
+					alert("" + results.rows.item(i).title + ":"
+							+ results.rows.item(i).detail);
 				}
 				divRecordFormNew();
 				//list record
