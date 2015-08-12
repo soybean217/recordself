@@ -13,3 +13,6 @@ var globalization_begin_time = "Begin time";
 var globalization_end_time = "End time";
 var globalization_title = "Title";
 var globalization_detail = "Detail";
+var globalization_catalog = "Catalog";
+var globalization_add_catalog = "Add Catalog";
+var globalization_modify_catalog = "Modify Catalog";

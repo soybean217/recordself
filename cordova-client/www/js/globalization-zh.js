@@ -13,3 +13,6 @@ var globalization_begin_time = "开始时间";
 var globalization_end_time = "结束时间";
 var globalization_title = "标题";
 var globalization_detail = "描述";
+var globalization_catalog = "目录";
+var globalization_add_catalog = "增加目录";
+var globalization_modify_catalog = "修改目录";
