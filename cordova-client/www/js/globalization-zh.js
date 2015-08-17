@@ -11,6 +11,7 @@ var globalization_update = "更新";
 var globalization_delete = "删除";
 var globalization_begin_time = "开始时间";
 var globalization_end_time = "结束时间";
+var globalization_last_update = "最后更新";
 var globalization_title = "标题";
 var globalization_detail = "描述";
 var globalization_catalog = "目录";

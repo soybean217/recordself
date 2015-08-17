@@ -11,6 +11,7 @@ var globalization_update = "Update";
 var globalization_delete = "Delete";
 var globalization_begin_time = "Begin time";
 var globalization_end_time = "End time";
+var globalization_last_update = "Last update";
 var globalization_title = "Title";
 var globalization_detail = "Detail";
 var globalization_catalog = "Catalog";

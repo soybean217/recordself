@@ -148,7 +148,7 @@
 			<button class="btn btn-lg btn-primary btn-block" type="submit"
 				id="recordEditAddNew">
 				<script>
-					document.write(globalization_begin);
+					document.write(globalization_begin); 
 				</script>
 			</button>
 		</form>
@@ -157,12 +157,14 @@
 	<div class="container" id="divDisplayRecordList">
 		<table class="display" id="tableRecord"></table>
 	</div>
-	<div class="container" id="divTitleForm">
+	<div class="container" id="divCatalogForm">
 		<form id="formCatalog" role="form">
 			<ul class="list-inline">
-				<li><input type="text" id="catalogEditTitle" name="catalogEditTitle"><input type="hidden" id="catalogEditId" name="catalogEditId"></li>
+				<li><input type="text" id="catalogEditContent"
+					name="catalogEditContent"><input type="hidden"
+					id="catalogEditId" name="catalogEditId"></li>
 				<li>
-					<button type="submit" class="btn" id="titleEditSubmit">
+					<button type="submit" class="btn" id="catalogEditSubmit">
 						<script>
 							document.write(globalization_add_catalog);
 						</script>
@@ -171,7 +173,7 @@
 			</ul>
 		</form>
 	</div>
-	<div class="container" id="divTitleList">
+	<div class="container" id="divCatalogList">
 		<table class="display" id="tableCatalog"></table>
 	</div>
 	<div class="container" id="divMenuAfterSignIn">
@@ -183,7 +185,9 @@
 		var LIMIT_UPDATE_BATCH_SIZE = 100;
 		var divArray = new Array();
 		var databaseStatus = "empty";
-		var mJsonMsg, mEditRecord, mLocalDbProcess, mLocalParameters, mDisplayData, mRecordDataSet, mTable, mNeedServerIdCount;
+		var mJsonMsg, mEditRecord, mLocalDbProcess, mLocalParameters, mDisplayData, mNeedServerIdCount;
+		var mRecordDataSet,mCatalogDataSet;
+		var  mRecordTable,mCatalogTable;
 		var mLastSyncTime = (new Date()).valueOf();
 		var mSyncStatus = 'stop';
 		var mSyncTimeout = 60000;
@@ -194,15 +198,16 @@
 		divArray.push($("#divDisplayRecordList"));
 		divArray.push($("#divMenuAfterSignIn"));
 		divArray.push($("#divMenu"));
-		divArray.push($("#divTitleForm"));
-		divArray.push($("#divTitleList"));
+		divArray.push($("#divCatalogForm"));
+		divArray.push($("#divCatalogList"));
 		divArray.push($("#divRecordButtons"));
 		//divArray.sort();//if you manual sort it , can close it .
 		$("#inputPassword").attr("placeholder", globalization_password);
 		var db = openDatabase("my.db", '1.0.0', '', 65536);
 		$(document).ready(function() {
 			formInitial();
-			divDisplayRecordListFromDb();
+			setupRecordListFromDb();
+			setupCatalogListFromDb();
 		});
 
 		//test on chrome

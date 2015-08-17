@@ -68,7 +68,7 @@ function formInitial() {
 	});
 	$("#formCatalog").validate({
 		rules : {
-			catalogEditTitle : {
+			catalogEditContent : {
 				required : true,
 				minlength : 1,
 				maxlength : 1000
@@ -79,7 +79,7 @@ function formInitial() {
 		e.preventDefault();
 		if ($("#formCatalog").valid()) {
 			catalogInfo = {
-				title : $("#catalogEditTitle").val(),
+				title : $("#catalogEditContent").val(),
 				id : $("#catalogEditId").val()
 			};
 			editCatalogProcess(catalogInfo);
@@ -116,10 +116,10 @@ function dbAfterInsertCatalog(tx, results) {
 			[], dbGetLastCatalogClientId);
 }
 function dbGetLastCatalogClientId(tx, results) {
-	if (results.rows.length>0){
+	if (results.rows.length > 0) {
 		alert(results.rows.item(0).clientId);
-	}
-	else{
+		queryCatalogAndDisplay();
+	} else {
 		alert("no record");
 	}
 }
@@ -137,8 +137,8 @@ function editRecordProcess() {
 		}
 	}
 }
-function divDisplayRecordListFromDb() {
-	mTable = $('#tableRecord').DataTable({
+function setupRecordListFromDb() {
+	mRecordTable = $('#tableRecord').DataTable({
 		"data" : mRecordDataSet,
 		"paging" : false,
 		"ordering" : false,
@@ -169,12 +169,36 @@ function divDisplayRecordListFromDb() {
 		} ]
 	});
 	$('#tableRecord tbody').on('click', 'tr', function() {
-		divRecordFormFill(mTable.row(this).data());
+		divRecordFormFill(mRecordTable.row(this).data());
 		location.hash = 'divRecord';
 	});
 	$("#recordEditDelete").click(function() {
 		deleteRecordWithId();
 	})
+}
+function setupCatalogListFromDb() {
+	mCatalogTable = $('#tableCatalog').DataTable({
+		"data" : mCatalogDataSet,
+		"paging" : false,
+		"ordering" : false,
+		"info" : false,
+		"searching" : false,
+		"order" : [ [ 2, "desc" ] ],
+		"columns" : [ {
+			"title" : "Id"
+		}, {
+			"title" : globalization_catalog
+		}, {
+			"title" : globalization_last_update
+		} ],
+		"columnDefs" : [ {
+			"targets" : [ 0 ],
+			"visible" : false,
+			"searchable" : false
+		} ]
+	});
+	$('#tableCatalog tbody').on('click', 'tr', function() {
+	});
 }
 function initialDB() {
 	mLocalDbProcess = "Initial DB";
@@ -225,11 +249,11 @@ function callbackInitialParameters(tx, results) {
 		// divRecordFormNew();
 		// queryRecordAndDisplay();
 		pageTitleList();
-		// queryRecordAndDisplay();
+		queryCatalogAndDisplay();
 	}
 }
 function pageTitleList() {
-	divControl("#divMenu", "#divTitleForm", "#divTitleList");
+	divControl("#divMenu", "#divCatalogForm", "#divCatalogList");
 }
 function divControl() {
 	var i = 0, numargs = arguments.length;
@@ -265,7 +289,12 @@ function queryRecordAndDisplay() {
 	mLocalDbProcess = "queryRecordAndDisplay";
 	db.transaction(dbQueryRecord, errorCB);
 }
-
+function queryCatalogAndDisplay() {
+	divControl("#divMenu", "#divCatalogForm", "#divCatalogList",
+			"#divMenuAfterSignIn");
+	mLocalDbProcess = "queryCatalogAndDisplay";
+	db.transaction(dbQueryCatalog, errorCB);
+}
 // form the query
 function dbQueryRecord(tx) {
 	tx
@@ -273,11 +302,11 @@ function dbQueryRecord(tx) {
 					"SELECT clientId,serverId,title,detail,serverUpdateTime,modifyStatus,beginTime,endTime "
 							+ " from local_records where userId=? "
 							+ " and state<>-1 order by beginTime desc limit 0,20;",
-					[ mLocalParameters['userId'] ], refreshDataView, errorCB);
+					[ mLocalParameters['userId'] ], refreshRecordListView,
+					errorCB);
 }
-
 // Display the results
-function refreshDataView(tx, results) {
+function refreshRecordListView(tx, results) {
 	mDisplayData = {
 		records : []
 	};
@@ -304,17 +333,41 @@ function refreshDataView(tx, results) {
 		row.serverUpdateTime = results.rows.item(i).serverUpdateTime;
 		mDisplayData.records.push(row);
 	}
-	// mTable.fnClearTable();
-	// mTable.fnAddData(mRecordDataSet);
-	// mTable.fnUpdate();
-	// mTable.rows.add(mRecordDataSet).draw();
-	// mTable.fnDraw();
 
-	mTable.clear();
-	mTable.rows.add(mRecordDataSet);
-	mTable.draw();
+	mRecordTable.clear();
+	mRecordTable.rows.add(mRecordDataSet);
+	mRecordTable.draw();
 
 	var syncThread = new syncRecordServer();
+}
+function dbQueryCatalog(tx) {
+	tx.executeSql("SELECT clientId,serverId,content,lastUseTime "
+			+ " from local_titles where userId=? "
+			+ " order by lastUseTime desc limit 0,20;",
+			[ mLocalParameters['userId'] ], refreshCatalogListView, errorCB);
+}
+// Display the catalog
+function refreshCatalogListView(tx, results) {
+	var mRow = [];
+	mCatalogDataSet = [];
+	var len = results.rows.length;
+	// alert("results.rows.length: " + results.rows.length);
+	for (var i = 0; i < len; i++) { // loop as many times as there are row
+		// results
+		// mRecordDataSet[i][0] = results.rows.item(i).title;
+		var mRow = [
+				results.rows.item(i).clientId,
+				results.rows.item(i).content,
+				new Date(results.rows.item(i).lastUseTime)
+						.Format("yyyy-MM-dd hh:mm") ];
+		mCatalogDataSet[i] = mRow;
+	}
+
+	mCatalogTable.clear();
+	mCatalogTable.rows.add(mCatalogDataSet);
+	mCatalogTable.draw();
+
+	// var syncThread = new syncRecordServer();
 }
 function convertDateStringToLong(inputString) {
 	if (isNaN((new Date(inputString)).valueOf())) {
