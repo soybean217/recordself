@@ -9,11 +9,21 @@ public class Record {
   private Long beginTime;
   private Long endTime;
   private Integer state;
-  
+  private String titleServerId;
+
   @Override
   public String toString() {
     return "Record [serverId=" + serverId + ", title=" + title + ", serverUpdateTime=" + serverUpdateTime + ", detail="
-        + detail + ", beginTime=" + beginTime + ", endTime=" + endTime + ", state=" + state + "]";
+        + detail + ", beginTime=" + beginTime + ", endTime=" + endTime + ", state=" + state + ", titleServerId="
+        + titleServerId + "]";
+  }
+
+  public String getTitleServerId() {
+    return titleServerId;
+  }
+
+  public void setTitleServerId(String titleServerId) {
+    this.titleServerId = titleServerId;
   }
 
   public String getDetail() {

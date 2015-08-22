@@ -27,7 +27,8 @@ public class RecordService {
   private User user;
   public final long mCurrent = System.currentTimeMillis();
   private Map<String, Record> mReceivedMap = new HashMap<String, Record>();
-  private static final String QUERY_COLUMN = " serverId,serverUpdateTime,title,detail,beginTime,endTime,state ";
+  private static final String QUERY_COLUMN = " serverId,serverUpdateTime,title,detail,"
+      + "beginTime,endTime,state,titleServerId ";
 
   public User getUser() {
     return user;
@@ -54,7 +55,7 @@ public class RecordService {
     }
     if (receiveWithServerIdList.size() > 0) {
       // check server id
-      procReceiveToDb(receiveWithServerIdList,sendClientUpdateRecords);
+      procReceiveToDb(receiveWithServerIdList, sendClientUpdateRecords);
     }
 
     result.addAll(sendClientUpdateRecords.values());
@@ -102,9 +103,9 @@ public class RecordService {
     // new ColumnListHandler());
     List<Object[]> updateArray = new ArrayList<Object[]>();
     List<Object[]> insertArray = new ArrayList<Object[]>();
-    
+
     identifyRecords(matchedFromDb, updateArray, insertArray, sendClientUpdateRecords);
-    
+
     if (updateArray.size() > 0) {
       updateServerDb(updateArray);
     }
@@ -128,7 +129,7 @@ public class RecordService {
       queryRunner
           .batch(
               con,
-              " update server_records set title=?,detail=?,beginTime=?,endTime=?,state=?,serverUpdateTime=? where serverId=? ;",
+              " update server_records set title=?,detail=?,beginTime=?,endTime=?,state=?,serverUpdateTime=?,titleServerId=? where serverId=? ;",
               updateAll);
     } catch (Exception e) {
       // TODO Auto-generated catch block
@@ -180,7 +181,7 @@ public class RecordService {
           Object[] currentSql = new Object[] { mReceivedMap.get(cell.getServerId()).getTitle(),
               mReceivedMap.get(cell.getServerId()).getDetail(), mReceivedMap.get(cell.getServerId()).getBeginTime(),
               mReceivedMap.get(cell.getServerId()).getEndTime(), mReceivedMap.get(cell.getServerId()).getState(),
-              mCurrent, cell.getServerId() };
+              mCurrent, mReceivedMap.get(cell.getServerId()).getTitleServerId(), cell.getServerId() };
           updateArray.add(currentSql);
           mReceivedMap.get(cell.getServerId()).setServerUpdateTime(mCurrent);
           sendClientUpdateRecords.put(cell.getServerId(), mReceivedMap.get(cell.getServerId()));
@@ -204,17 +205,14 @@ public class RecordService {
       int i = 0;
       for (Record cell : mReceivedMap.values()) {
         Object[] currentForSql = new Object[] { cell.getServerId(), user.getUserId(), cell.getTitle(),
-            cell.getDetail(), cell.getBeginTime(), cell.getEndTime(), cell.getState(), mCurrent };
+            cell.getDetail(), cell.getBeginTime(), cell.getEndTime(), cell.getState(), mCurrent,cell.getTitleServerId() };
         insertAll[i] = currentForSql;
         i++;
         cell.setServerUpdateTime(mCurrent);
         sendClientUpdateRecords.put(cell.getServerId(), cell);
       }
-      queryRunner
-          .batch(
-              con,
-              "insert into server_records (serverId,userId,title,detail,beginTime,endTime,state,serverUpdateTime) values (?,?,?,?,?,?,?,?)",
-              insertAll);
+      queryRunner.batch(con, "insert into server_records (serverId,userId,title,detail,beginTime,endTime,state,"
+          + "serverUpdateTime,titleClientId) values (?,?,?,?,?,?,?,?,?)", insertAll);
     } catch (Exception e) {
       // TODO Auto-generated catch block
       e.printStackTrace();

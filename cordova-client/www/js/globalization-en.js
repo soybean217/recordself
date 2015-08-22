@@ -15,5 +15,6 @@ var globalization_last_update = "Last update";
 var globalization_title = "Title";
 var globalization_detail = "Detail";
 var globalization_catalog = "Catalog";
+var globalization_all = "All";
 var globalization_add_catalog = "Add Catalog";
 var globalization_modify_catalog = "Modify Catalog";
