@@ -22,7 +22,7 @@ import com.recordself.json.protocol.ReceivedLocalRecords;
 
 public class RecordService {
 
-  private final static Logger LOG = Logger.getLogger("Demo.class");
+  private final static Logger LOG = Logger.getLogger("RecordService.class");
   private ReceivedLocalRecords receivedLocalRecords;
   private User user;
   public final long mCurrent = System.currentTimeMillis();
@@ -44,7 +44,7 @@ public class RecordService {
     Map<String, Record> sendClientUpdateRecords = new HashMap<String, Record>();
     List<Record> receiveWithServerIdList = new ArrayList<Record>();
     queryRecordToClient(sendClientUpdateRecords);
-    for (Record record : receivedLocalRecords.getRecords()) {
+    for (Record record : receivedLocalRecords.getDataRows()) {
       if (!(record.getServerId() != null && record.getServerId().length() > 5)) {
         LOG.error("no server id . user id :" + user.getUserId());
       } else {

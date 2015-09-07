@@ -26,6 +26,14 @@
     LOG.info(user);
     UserService userService = new UserService();
     if (userService.checkUserCurrent(user)) {
+      
+      JsonElement tableNameJelement = new JsonParser().parse(info);
+      JsonObject tableName = tableNameJelement.getAsJsonObject();
+      //tableName = tableName.getAsJsonObject("tableName");
+      System.out.println(tableName.get("tableName"));
+      //ReceivedControl receivedControl = gson.fromJson(info, classOfT);
+      
+      /*
       ReceivedLocalRecords receivedLocalRecords = gson.fromJson(info, ReceivedLocalRecords.class);
       RecordService recordService = new RecordService();
       recordService.setReceivedLocalRecords(receivedLocalRecords);
@@ -36,6 +44,7 @@
       String rsp = gson.toJson(baseRsp);
       out.println(rsp);
       LOG.debug(rsp); 
+      */
     } else {
       String msg = "check user failure!";
       LOG.info(msg);

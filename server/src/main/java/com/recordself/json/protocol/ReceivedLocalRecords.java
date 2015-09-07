@@ -6,15 +6,15 @@ import com.recordself.entity.Record;
 
 
 public class ReceivedLocalRecords {
-  private List<Record> records;
+  private List<Record> dataRows;
   private Long lastSyncServerTimeFromClient;
 
-  public List<Record> getRecords() {
-    return records;
+  public List<Record> getDataRows() {
+    return dataRows;
   }
 
-  public void setRecords(List<Record> records) {
-    this.records = records;
+  public void setDataRows(List<Record> dataRows) {
+    this.dataRows = dataRows;
   }
 
   public Long getLastSyncServerTimeFromClient() {
