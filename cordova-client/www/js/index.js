@@ -101,8 +101,6 @@ function setupRecordListFromDb() {
 			"title" : globalization_begin_time
 		}, {
 			"title" : globalization_end_time
-		}, {
-			"title" : "titleId"
 		} ],
 		"columnDefs" : [ {
 			"targets" : [ 0 ],
@@ -114,13 +112,10 @@ function setupRecordListFromDb() {
 		}, {
 			"targets" : [ 4 ],
 			"visible" : false,
-		}, {
-			"targets" : [ 5 ],
-			"visible" : false,
 		} ]
 	});
 	$('#tableRecord tbody').on('click', 'tr', function() {
-		divRecordFormFill(mRecordTable.row(this).data());
+		divRecordFormFill(mRecordTable.row(this).data()[0]);
 		location.hash = 'divRecord';
 	});
 	$("#recordEditDelete").click(function() {
@@ -154,14 +149,9 @@ function setupCatalogListFromDb() {
 			"searchable" : false
 		} ]
 	});
-	$('#tableCatalog tbody').on(
-			'click',
-			'tr',
-			function() {
-				alert(mTitleTable.row(this).data()[0] + ""
-						+ mTitleTable.row(this).data()[3]);
-				showViewRecord(mTitleTable.row(this).data())
-			});
+	$('#tableCatalog tbody').on('click', 'tr', function() {
+		showViewRecord(mTitleTable.row(this).data())
+	});
 }
 
 function editCatalogProcess(info) {
@@ -253,8 +243,8 @@ function populateDB(tx) {
 	// tx.executeSql('DROP TABLE IF EXISTS local_relations');
 	tx.executeSql('CREATE TABLE IF NOT EXISTS local_relations ('
 			+ 'clientId integer primary key,' + 'userId text,'
-			+ 'serverId text UNIQUE,' + 'idFrom text not null,'
-			+ 'idTo text not null,' + 'state integer default 0,'
+			+ 'serverId text UNIQUE,' + 'idFrom integer not null,'
+			+ 'idTo integer not null,' + 'state integer default 0,'
 			+ 'serverUpdateTime integer default 0,'
 			+ 'modifyStatus integer default 1 )');
 	checkParametersForInitial(tx);
@@ -266,12 +256,12 @@ function checkParametersForInitial(tx) {
 }
 // Display the results
 function callbackInitialParameters(tx, results) {
-	var len = results.rows.length;
-	if (len == 0) {
+	if (results.rows.length == 0) {
 		// enter register or local use
 		divControl("#divSignUp");
 	} else {
-		for (var i = 0; i < len; i++) { // loop as many times as there are row
+		for (var i = 0; i < results.rows.length; i++) { // loop as many times as
+														// there are row
 			// results
 			mLocalParameters[results.rows.item(i).title] = results.rows.item(i).detail;
 		}
@@ -325,54 +315,25 @@ function queryCatalogAndDisplay() {
 function dbQueryRecord(catalogInfoArray) {
 	return function(tx) {
 		if (catalogInfoArray != null && catalogInfoArray[0] > 0) {
-			console.log("3:" + catalogInfoArray[0] + " " + catalogInfoArray[3]);
-			if (catalogInfoArray[3] > 0) {
-				console.log("31:" + catalogInfoArray[0] + " "
-						+ catalogInfoArray[3]);
-				tx
-						.executeSql(
-								"SELECT r.idFrom AS clientId,c.serverId AS serverId,c.content AS title,'detail' AS detail,"
-										+ " c.serverUpdateTime AS serverUpdateTime,c.modifyStatus AS modifyStatus,"
-										+ " c.lastLocalTime as lastLocalTime,1 as endTime,1 as titleClientId,r.idFrom,r.idTo "
-										+ " FROM `local_contents` as c , `local_relations` as r "
-										+ " WHERE r.idFrom IN (SELECT clientId FROM local_contents "
-										+ " WHERE state<>-1 and contentType='SchemaRecord' and userId= ? "
-										+ "  ) "
-										+ " AND r.idTo = c.clientId AND c.contentType='MetadataRecordContent'"
-										+ " and (r.idFrom IN (SELECT idTo FROM `local_relations` WHERE idFrom = ?) "
-										+ "  OR r.idFrom IN (SELECT idTo FROM `local_relations` WHERE idFrom = ?) ) "
-										+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.clientId DESC"
-										+ " limit 0,20;", [
-										mLocalParameters['userId'],
-										catalogInfoArray[0],
-										catalogInfoArray[3] ],
-								refreshRecordListView, errorCB);
-			} else {
-				console.log("32:" + catalogInfoArray[0] + " "
-						+ catalogInfoArray[3] + ":"
-						+ mLocalParameters['userId']);
-				tx
-						.executeSql(
-								"SELECT r.idFrom AS clientId,c.serverId AS serverId,c.content AS title,'detail' AS detail,"
-										+ " c.serverUpdateTime AS serverUpdateTime,c.modifyStatus AS modifyStatus,"
-										+ " c.lastLocalTime as lastLocalTime,1 as endTime,1 as titleClientId,r.idFrom,r.idTo "
-										+ " FROM `local_contents` as c , `local_relations` as r "
-										+ " WHERE r.idFrom IN (SELECT clientId FROM local_contents "
-										+ " WHERE state<>-1 and contentType='SchemaRecord' and userId= ? "
-										+ "  ) "
-										+ " AND r.idTo = c.clientId AND c.contentType='MetadataRecordContent' "
-										+ " and ( r.idFrom IN (SELECT idTo FROM `local_relations` WHERE idFrom = ?) "
-										+ "   ) "
-										+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.clientId DESC"
-										+ " limit 0,20;", [
-										mLocalParameters['userId'],
-										catalogInfoArray[0] ],
-								refreshRecordListView, errorCB);
-			}
+			tx
+					.executeSql(
+							"SELECT r.idFrom AS clientId,c.serverId AS serverId,c.content AS title,'detail' AS detail,"
+									+ " c.serverUpdateTime AS serverUpdateTime,c.modifyStatus AS modifyStatus,"
+									+ " c.lastLocalTime as lastLocalTime,1 as endTime,1 as titleClientId,r.idFrom,r.idTo "
+									+ " FROM `local_contents` as c , `local_relations` as r "
+									+ " WHERE r.idFrom IN (SELECT clientId FROM local_contents "
+									+ " WHERE state<>-1 and contentType='SchemaRecord' and userId= ? "
+									+ "  and (clientId IN (SELECT idTo FROM `local_relations` WHERE idFrom = ? ) "
+									+ "  OR clientId IN (SELECT idTo FROM `local_relations` WHERE idFrom = ? )) "
+									+ " AND r.idTo = c.clientId AND c.contentType='MetadataRecordContent'"
+									+ "  ) "
+									+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.clientId DESC"
+									+ " limit 0,20;", [
+									mLocalParameters['userId'],
+									catalogInfoArray[0], catalogInfoArray[3] ],
+							refreshRecordListView, errorCB);
+
 		} else {
-			console.log("2:" + mLocalParameters['userId']);
-			// tx.executeSql("SELECT * " + " FROM `local_contents` as c ", [],
-			// refreshRecordListView, errorCB);
 			tx
 					.executeSql(
 							"SELECT r.idFrom AS clientId,c.serverId AS serverId,c.content AS title,'detail' AS detail,"
@@ -405,8 +366,7 @@ function refreshRecordListView(tx, results) {
 				new Date(results.rows.item(i).lastLocalTime)
 						.Format("yyyy-MM-dd hh:mm"),
 				results.rows.item(i).endTime == 0 ? "" : (new Date(results.rows
-						.item(i).endTime).Format("yyyy-MM-dd hh:mm")),
-				results.rows.item(i).titleClientId ];
+						.item(i).endTime).Format("yyyy-MM-dd hh:mm")) ];
 		mRecordDataSet[i] = mRow;
 	}
 
@@ -501,7 +461,7 @@ function dbInsertSingleRecord(editRecord) {
 				"insert into local_contents (userId,content,lastLocalTime,contentType"
 						+ " ) values (?,?,?,'SchemaRecord')", [
 						mLocalParameters['userId'], editRecord.detail,
-						(new Date()).valueOf() ],
+						parseInt((new Date()).valueOf()) ],
 				processRecordMetadata(editRecord));
 		// showViewRecord(editRecord.titleClientId);
 	}
@@ -549,7 +509,7 @@ function insertRelation(idFrom, idTo) {
 	return function(tx) {
 		tx.executeSql("insert into local_relations (userId,idFrom,idTo"
 				+ " ) values (?,?,?)", [ mLocalParameters['userId'], idFrom,
-				idTo ], alert(idTo + " " + idFrom));
+				idTo ]);
 	}
 }
 
@@ -596,23 +556,68 @@ function dbDeleteSingleRecord(tx) {
 	showViewRecord();
 }
 
-function divRecordFormFill(row) {
-	if (row == null) {
-	} else {
-		$("#recordEditDetail").val(row[2]);
-		$("#recordEditId").val(row[0]);
-		$("#recordEditBeginTime").val(row[3]);
-		if (row[4] == "") {
-			$("#recordEditEndTime").val(new Date().Format("yyyy-MM-dd hh:mm"));
-		} else {
-			$("#recordEditEndTime").val(row[4]);
+function divRecordFormFill(recordId) {
+	if (recordId > 0) {
+		db.transaction(getRecordInfo(recordId), errorCB);
+	}
+
+	function getRecordInfo(recordClientId) {
+		return function(tx) {
+			tx
+					.executeSql(
+							"SELECT c.clientId AS contentClientId,c.contentType as contentType,"
+									+ " c.serverId AS serverId,c.content AS content,"
+									+ " c.serverUpdateTime AS serverUpdateTime,c.modifyStatus AS modifyStatus,"
+									+ " c.lastLocalTime as lastLocalTime,  r.idFrom,r.idTo"
+									+ "  FROM `local_contents` as c ,  `local_relations` as r"
+									+ " WHERE r.idTo = c.clientId and r.idFrom = ? "
+									+ "union "
+									+ "SELECT c.clientId AS contentClientId,c.contentType as contentType,"
+									+ " c.serverId AS serverId,c.content AS content,"
+									+ " c.serverUpdateTime AS serverUpdateTime,c.modifyStatus AS modifyStatus,"
+									+ " c.lastLocalTime as lastLocalTime,  r.idFrom,r.idTo"
+									+ "  FROM `local_contents` as c ,  `local_relations` as r"
+									+ "  WHERE r.idFrom = c.clientId	and  r.idTo=?",
+							[ recordId, recordId ],
+							procResultByRecordClientId(recordClientId));
 		}
-		$("#selectCatalog").val(row[5]);
-		$("#recordEditBeginTime").show();
-		$("#recordEditEndTime").show();
-		$("#recordEditButtonGroup").show();
-		$("#recordEditTimePicker").show();
-		$("#recordEditAddNew").hide();
+	}
+	function displayRecord(resultObject){
+		if (resultObject['MetadataRecordContent']!=null){
+			$("#recordEditDetail").val(resultObject['MetadataRecordContent'][0].content);
+		}
+//		
+//		$("#recordEditId").val(row[0]);
+//		$("#recordEditBeginTime").val(row[3]);
+//		if (row[4] == "") {
+//			$("#recordEditEndTime").val(
+//					new Date().Format("yyyy-MM-dd hh:mm"));
+//		} else {
+//			$("#recordEditEndTime").val(row[4]);
+//		}
+//		$("#selectCatalog").val(row[5]);
+//		$("#recordEditBeginTime").show();
+//		$("#recordEditEndTime").show();
+//		$("#recordEditButtonGroup").show();
+//		$("#recordEditTimePicker").show();
+//		$("#recordEditAddNew").hide();		
+	}
+	function procResultByRecordClientId(recordClientId) {
+		var resultObject = {};
+		return function(tx, results) {
+			if (results.rows.length > 0) {
+				for (i = 0; i < results.rows.length; i++) {
+					if (resultObject[results.rows.item(i).contentType] == null) {
+						resultObject[results.rows.item(i).contentType] = new Array();
+
+					}
+					resultObject[results.rows.item(i).contentType]
+							.push(results.rows.item(i));
+				}
+				console.log(resultObject);
+			}
+			displayRecord(resultObject);
+		}
 	}
 }
 
