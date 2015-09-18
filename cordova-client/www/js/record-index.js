@@ -1,3 +1,10 @@
+//MetadataRecordContent,MetadataRecordBeginTime,MetadataRecordEndTime,SchemaCatalog,SchemaRecord
+var metadataType = {
+	MetadataRecordContent : "string",
+	MetadataRecordBeginTime : "intTime",
+	MetadataRecordEndTime : "intTime"
+};
+
 function formInitial() {
 	$("#formSignUp").validate({
 		rules : {
@@ -53,14 +60,14 @@ function formInitial() {
 			}
 		}
 	});
-	$("#formRecord").submit(
-			function(e) {
-				e.preventDefault();
-				if ($("#formRecord").valid()) {
-					db.transaction(insertOrUpdateRecord($("#selectCatalog")
-							.val()), errorCB);
-				}
-			});
+	$("#formRecord").submit(function(e) {
+		e.preventDefault();
+		if ($("#formRecord").valid()) {
+			procInsertOrUpdateRecord()
+			// db.transaction(insertOrUpdateRecord($("#selectCatalog")
+			// .val()), errorCB);
+		}
+	});
 	$("#formCatalog").validate({
 		rules : {
 			catalogEditContent : {
@@ -81,6 +88,10 @@ function formInitial() {
 			// signInAjax(mServerUrl);
 		}
 	});
+	$("#recordEditDelete").click(function() {
+		console.log("recordEditDelete");
+		deleteRecordWithId();
+	})
 }
 
 function setupRecordListFromDb() {
@@ -118,10 +129,8 @@ function setupRecordListFromDb() {
 		divRecordFormFill(mRecordTable.row(this).data()[0]);
 		location.hash = 'divRecord';
 	});
-	$("#recordEditDelete").click(function() {
-		deleteRecordWithId();
-	})
 }
+
 function setupCatalogListFromDb() {
 	mTitleTable = $('#tableCatalog').DataTable({
 		"data" : mTitleDataSet,
@@ -167,25 +176,53 @@ function editCatalogProcess(info) {
 	}
 }
 
-function insertOrUpdateRecord(titleClientId) {
-	return function(tx) {
-		tx.executeSql('select serverId from local_contents where clientId=?',
-				[ titleClientId ], getTitleServerIdByClientIdTxCb);
-	}
+function procInsertOrUpdateRecord() {
+	editRecord = {
+		detail : $("#recordEditDetail").val(),
+		metadataRecordContentClientId : $("#metadataRecordContentClientId")
+				.val(),
+		beginTimeInputString : $("#recordEditBeginTime").val(),
+		metadataRecordBeginTimeClientId : $("#metadataRecordBeginTimeClientId")
+				.val(),
+		endTimeInputString : $("#recordEditEndTime").val(),
+		metadataRecordEndTimeClientId : $("#metadataRecordEndTimeClientId")
+				.val(),
+		clientId : $("#recordEditId").val(),
+		catalogClientId : $("#selectCatalog").val()
+	};
+	editRecordProcess(editRecord);
 }
 
-function getTitleServerIdByClientIdTxCb(tx, results) {
-	if (results.rows.length > 0) {
-		editRecord = {
-			detail : $("#recordEditDetail").val(),
-			beginTimeInputString : $("#recordEditBeginTime").val(),
-			endTimeInputString : $("#recordEditEndTime").val(),
-			clientId : $("#recordEditId").val(),
-			titleClientId : $("#selectCatalog").val(),
-			titleServerId : results.rows.item(0).serverId
-		};
-		editRecordProcess(editRecord);
+function checkRecordModify(editRecord) {
+	var checkContentType = new Array();
+	if (mCurrentRecord['SchemaCatalog'] != null) {
+		if (editRecord.catalogClientId != mCurrentRecord['SchemaCatalog'][0].contentClientId) {
+			checkContentType.push("SchemaCatalog");
+		}
 	}
+	if (mCurrentRecord['MetadataRecordContent'] != null) {
+		if (editRecord.detail != mCurrentRecord['MetadataRecordContent'][0].content) {
+			checkContentType.push("MetadataRecordContent");
+		}
+	}
+	if (mCurrentRecord['MetadataRecordBeginTime'] != null) {
+		if (editRecord.beginTimeInputString != new Date(
+				parseInt(mCurrentRecord['MetadataRecordBeginTime'][0].content))
+				.Format("yyyy-MM-dd hh:mm")) {
+			checkContentType.push("MetadataRecordBeginTime");
+		}
+	}
+	if (mCurrentRecord['MetadataRecordEndTime'] != null) {
+		if (editRecord.endTimeInputString != new Date(
+				parseInt(mCurrentRecord['MetadataRecordEndTime'][0].content))
+				.Format("yyyy-MM-dd hh:mm")) {
+			checkContentType.push("MetadataRecordEndTime");
+		}
+	} else if (editRecord.endTimeInputString != null
+			&& editRecord.endTimeInputString != '') {
+		checkContentType.push("MetadataRecordEndTime");
+	}
+	return checkContentType;
 }
 
 function dbInsertCatalog(info) {
@@ -201,9 +238,16 @@ function dbInsertCatalog(info) {
 function editRecordProcess(editRecord) {
 	if (editRecord != null) {
 		if (editRecord.clientId > 0) {
-			// update
-			mLocalDbProcess = "updateRecord";
-			db.transaction(dbUpdateSingleRecord(editRecord), errorCB);
+			// compare content
+			var updateArray = checkRecordModify(editRecord);
+			if (updateArray.length > 0) {
+
+				// update
+				mLocalDbProcess = "updateRecord";
+				db.transaction(dbUpdateSingleRecord(editRecord, updateArray),
+						errorCB);
+				// update content last use .
+			}
 		} else {
 			// insert
 			mLocalDbProcess = "insertRecord";
@@ -261,7 +305,7 @@ function callbackInitialParameters(tx, results) {
 		divControl("#divSignUp");
 	} else {
 		for (var i = 0; i < results.rows.length; i++) { // loop as many times as
-														// there are row
+			// there are row
 			// results
 			mLocalParameters[results.rows.item(i).title] = results.rows.item(i).detail;
 		}
@@ -355,10 +399,7 @@ function refreshRecordListView(tx, results) {
 	var mRow = [];
 	mRecordDataSet = [];
 	var len = results.rows.length;
-	console.log("results.rows.length: " + results.rows.length);
-	console.log("tx: " + tx);
 	for (var i = 0; i < len; i++) { // loop as many times as there are row
-		console.log(results.rows.item(i));
 		var mRow = [
 				results.rows.item(i).clientId,
 				results.rows.item(i).title,
@@ -414,32 +455,17 @@ function refreshTitleListView(tx, results) {
 }
 function convertDateStringToLong(inputString) {
 	if (isNaN((new Date(inputString)).valueOf())) {
-		return (new Date()).valueOf();
+		return (parseInt(new Date().valueOf()));
 	} else {
-		return (new Date(inputString).valueOf());
+		return (parseInt(new Date(inputString).valueOf()));
 	}
 }
 
-// update record to local
-function dbUpdateSingleRecord(editRecord) {
-	return function(tx) {
-		var recordBeginTimeLong = convertDateStringToLong(editRecord.beginTimeInputString);
-		var recordEndTimeLong = convertDateStringToLong(editRecord.endTimeInputString);
-		tx
-				.executeSql(
-						"update local_records set title = ? ,detail = ? ,beginTime = ? ,endTime=?"
-								+ " ,modifyStatus=1,titleClientId=?,titleServerId=? where clientId=?; ",
-						[ editRecord.title, editRecord.detail,
-								recordBeginTimeLong, recordEndTimeLong,
-								editRecord.titleClientId,
-								editRecord.titleServerId, editRecord.clientId ]);
-		console.log("need modify dbUpdateSingleRecord");
-		showViewRecord();
-	}
-}
 function showViewRecord(catalogInfoArray) {
 	queryRecordAndDisplay(catalogInfoArray);
-	$("#selectCatalog").val(catalogInfoArray[0]);
+	if (catalogInfoArray != null && catalogInfoArray != "") {
+		$("#selectCatalog").val(catalogInfoArray[0]);
+	}
 	divRecordFormNew();
 }
 /**
@@ -447,21 +473,11 @@ function showViewRecord(catalogInfoArray) {
  */
 function dbInsertSingleRecord(editRecord) {
 	return function(tx) {
-		var recordBeginTimeLong = convertDateStringToLong(editRecord.beginTimeInputString);
-		// tx
-		// .executeSql(
-		// "insert into local_records
-		// (userId,title,detail,beginTime,titleClientId,titleServerId) values
-		// (?,?,?,?,?,?); ",
-		// [ mLocalParameters['userId'], editRecord.title,
-		// editRecord.detail, recordBeginTimeLong,
-		// editRecord.titleClientId,
-		// editRecord.titleServerId ]);
 		tx.executeSql(
 				"insert into local_contents (userId,content,lastLocalTime,contentType"
 						+ " ) values (?,?,?,'SchemaRecord')", [
 						mLocalParameters['userId'], editRecord.detail,
-						parseInt((new Date()).valueOf()) ],
+						(new Date()).valueOf() ],
 				processRecordMetadata(editRecord));
 		// showViewRecord(editRecord.titleClientId);
 	}
@@ -469,19 +485,43 @@ function dbInsertSingleRecord(editRecord) {
 
 function processRecordMetadata(editRecord) {
 	return function(tx, results) {
-		var recordBeginTimeLong = convertDateStringToLong(editRecord.beginTimeInputString);
 		insertRecordMetadataTransaction(results.insertId,
 				'MetadataRecordContent', editRecord.detail);
 		insertRecordMetadataTransaction(results.insertId,
-				'MetadataRecordBeginTime', recordBeginTimeLong);
-		if (editRecord.titleServerId > 0) {
-			db.transaction(insertRelation(editRecord.titleServerId,
-					results.insertId), errorCB);
+				'MetadataRecordBeginTime', editRecord.beginTimeInputString);
+		// sync get catalogServerId
+		var catalogServerId = getContentServerIdByClientId(editRecord.catalogClientId);
+		if (catalogServerId > 0) {
+			console.log("true trace catalog bug:" + editRecord.titleServerId);
+			db.transaction(insertRelation(catalogServerId, results.insertId),
+					errorCB);
 		} else {
-			db.transaction(insertRelation(editRecord.titleClientId,
+			console.log("false trace catalog bug:" + editRecord.titleServerId);
+			db.transaction(insertRelation(editRecord.catalogClientId,
 					results.insertId), errorCB);
 		}
 	}
+}
+
+function getContentServerIdByClientId(clientId) {
+	var result = 0;
+	db.transaction(dbGetContentServerIdByClientId(clientId), errorCB)
+
+	function dbGetContentServerIdByClientId(clientId) {
+		return function(tx) {
+			tx
+					.executeSql(
+							"select serverId from local_contents where clientId = ? and userId=?",
+							[ clientId, mLocalParameters['userId'] ],
+							txGetContentServerIdByClientId);
+		}
+	}
+	function txGetContentServerIdByClientId(tx, results) {
+		if (results.rows.length > 0 && results.rows.item(0).serverId > 0) {
+			result = serverId;
+		}
+	}
+	return result;
 }
 
 function insertRecordMetadataTransaction(idFrom, metadataContentType,
@@ -492,11 +532,26 @@ function insertRecordMetadataTransaction(idFrom, metadataContentType,
 
 function insertRecordMetadata(idFrom, metadataContentType, metaContent) {
 	return function(tx) {
-		tx.executeSql(
-				"insert into local_contents (userId,content,lastLocalTime,contentType"
-						+ " ) values (?,?,?,?)", [ mLocalParameters['userId'],
-						metaContent, (new Date()).valueOf(),
-						metadataContentType ], getLastIdForMetadata(idFrom));
+		switch (metadataType[metadataContentType]) {
+		case "intTime":
+			var timeLong = convertDateStringToLong(metaContent);
+			tx.executeSql(
+					"insert into local_contents (userId,content,lastLocalTime,contentType"
+							+ " ) values (?,cast(? as int),?,?)", [
+							mLocalParameters['userId'], timeLong,
+							(new Date()).valueOf(), metadataContentType ],
+					getLastIdForMetadata(idFrom));
+			break;
+		default:
+			tx.executeSql(
+					"insert into local_contents (userId,content,lastLocalTime,contentType"
+							+ " ) values (?,?,?,?)", [
+							mLocalParameters['userId'], metaContent,
+							(new Date()).valueOf(), metadataContentType ],
+					getLastIdForMetadata(idFrom));
+			break;
+		}
+
 	}
 }
 
@@ -549,10 +604,18 @@ function deleteRecordWithId() {
 	db.transaction(dbDeleteSingleRecord, errorCB);
 }
 function dbDeleteSingleRecord(tx) {
+	console.log("dbDeleteSingleRecord");
 	tx
 			.executeSql(
 					"update local_records set state = -1 ,modifyStatus=1 where clientId = ?; ",
 					[ $("#recordEditId").val() ]);
+	tx
+			.executeSql(
+					"update local_records set state = -1 ,modifyStatus=1"
+							+ " where clientId in (select idTo from local_relations where idFrom = ?);",
+					[ $("#recordEditId").val() ]);
+	tx.executeSql("update local_relations set state = -1 ,modifyStatus=1"
+			+ " where  idFrom = ?;", [ $("#recordEditId").val() ]);
 	showViewRecord();
 }
 
@@ -568,39 +631,69 @@ function divRecordFormFill(recordId) {
 							"SELECT c.clientId AS contentClientId,c.contentType as contentType,"
 									+ " c.serverId AS serverId,c.content AS content,"
 									+ " c.serverUpdateTime AS serverUpdateTime,c.modifyStatus AS modifyStatus,"
-									+ " c.lastLocalTime as lastLocalTime,  r.idFrom,r.idTo"
+									+ " c.lastLocalTime as lastLocalTime,  r.idFrom,r.idTo,r.clientId as relationClientId"
 									+ "  FROM `local_contents` as c ,  `local_relations` as r"
 									+ " WHERE r.idTo = c.clientId and r.idFrom = ? "
 									+ "union "
 									+ "SELECT c.clientId AS contentClientId,c.contentType as contentType,"
 									+ " c.serverId AS serverId,c.content AS content,"
 									+ " c.serverUpdateTime AS serverUpdateTime,c.modifyStatus AS modifyStatus,"
-									+ " c.lastLocalTime as lastLocalTime,  r.idFrom,r.idTo"
+									+ " c.lastLocalTime as lastLocalTime,  r.idFrom,r.idTo,r.clientId as relationClientId"
 									+ "  FROM `local_contents` as c ,  `local_relations` as r"
 									+ "  WHERE r.idFrom = c.clientId	and  r.idTo=?",
 							[ recordId, recordId ],
 							procResultByRecordClientId(recordClientId));
 		}
 	}
-	function displayRecord(resultObject){
-		if (resultObject['MetadataRecordContent']!=null){
-			$("#recordEditDetail").val(resultObject['MetadataRecordContent'][0].content);
+	function displayRecord(resultObject) {
+		if (resultObject['RecordClientId'] > 0) {
+			mCurrentRecord = resultObject;
+			$("#recordEditId").val(resultObject['RecordClientId']);
+			if (resultObject['MetadataRecordContent'] != null) {
+				$("#recordEditDetail").val(
+						resultObject['MetadataRecordContent'][0].content);
+				$("#metadataRecordContentClientId")
+						.val(
+								resultObject['MetadataRecordContent'][0].contentClientId);
+			}
+			if (resultObject['SchemaCatalog'] != null) {
+				$("#selectCatalog").val(
+						resultObject['SchemaCatalog'][0].contentClientId);
+			}
+			if (resultObject['MetadataRecordBeginTime'] != null) {
+				$("#recordEditBeginTime")
+						.val(
+								new Date(
+										parseInt(resultObject['MetadataRecordBeginTime'][0].content))
+										.Format("yyyy-MM-dd hh:mm"));
+				$("#metadataRecordBeginTimeClientId")
+						.val(
+								resultObject['MetadataRecordBeginTime'][0].contentClientId);
+			}
+			if (resultObject['MetadataRecordEndTime'] != null) {
+				$("#recordEditEndTime")
+						.val(
+								new Date(
+										parseInt(resultObject['MetadataRecordEndTime'][0].content))
+										.Format("yyyy-MM-dd hh:mm"));
+				$("#metadataRecordEndTimeClientId")
+						.val(
+								resultObject['MetadataRecordEndTime'][0].contentClientId);
+			} else {
+				$("#recordEditEndTime").val(
+						new Date().Format("yyyy-MM-dd hh:mm"));
+				$("#metadataRecordEndTimeClientId").val(0);
+			}
+			$("#recordEditBeginTime").show();
+			$("#recordEditEndTime").show();
+			$("#recordEditTimePicker").show();
+			$("#recordEditButtonGroup").show();
+			$("#recordEditAddNew").hide();
 		}
-//		
-//		$("#recordEditId").val(row[0]);
-//		$("#recordEditBeginTime").val(row[3]);
-//		if (row[4] == "") {
-//			$("#recordEditEndTime").val(
-//					new Date().Format("yyyy-MM-dd hh:mm"));
-//		} else {
-//			$("#recordEditEndTime").val(row[4]);
-//		}
-//		$("#selectCatalog").val(row[5]);
-//		$("#recordEditBeginTime").show();
-//		$("#recordEditEndTime").show();
-//		$("#recordEditButtonGroup").show();
-//		$("#recordEditTimePicker").show();
-//		$("#recordEditAddNew").hide();		
+
+		// $("#selectCatalog").val(row[5]);
+		// 
+
 	}
 	function procResultByRecordClientId(recordClientId) {
 		var resultObject = {};
@@ -614,7 +707,7 @@ function divRecordFormFill(recordId) {
 					resultObject[results.rows.item(i).contentType]
 							.push(results.rows.item(i));
 				}
-				console.log(resultObject);
+				resultObject['RecordClientId'] = recordClientId;
 			}
 			displayRecord(resultObject);
 		}
@@ -709,361 +802,78 @@ function dbInsertAccountInfo(userName, password) {
 	}
 }
 
-var syncServer = function() {
-	console.log("mSyncStatus:" + mSyncStatus + " "
-			+ ((new Date()).valueOf() - mLastSyncTime));
-	if (mSyncStatus == 'stop'
-			|| ((new Date()).valueOf() - mLastSyncTime > mSyncTimeout)) {
-		console.log("begin sync");
-		mSyncStatus = 'work';
-		mLastSyncTime = (new Date()).valueOf();
-		var needSyncCount = 0;
-		var currentServerId = bigInt(0);
+// update record to local
+function dbUpdateSingleRecord(editRecord, updateArray) {
+	return function(tx) {
+		updateArray.forEach(procMetadataForUpdateRecord(editRecord));
 
-		procServerIdFromServer("local_contents");
+		// showViewRecord();
 	}
-	function syncLocalToServer(tableName) {
-		mLocalDbProcess = "syncLocalToServer:" + tableName
-		db.transaction(dbLastSyncTime(tableName), errorCB);
-	}
-
-	function dbLastSyncTime(tableName) {
-		return function(tx) {
-			mLocalDbProcess = "dbLastSyncTime";
-			tx
-					.executeSql(
-							"Select serverUpdateTime from "
-									+ tableName
-									+ " where userId=? order by serverUpdateTime desc limit 1 ;",
-							[ mLocalParameters['userId'] ],
-							handlerLastSyncTime(tableName), errorCB);
-		}
-
-	}
-	function handlerLastSyncTime(tableName) {
-		return function(tx, results) {
-			if (results.rows.length > 0) {
-				if (results.rows.item(0).serverUpdateTime > 0) {
-					withInputGetNeedSyncRows(
-							results.rows.item(0).serverUpdateTime, tableName);
+	function procMetadataForUpdateRecord(editRecord) {
+		return function(element, index, array) {
+			switch (element) {
+			case "SchemaCatalog":
+				updateSingleRelationIdFrom(
+						mCurrentRecord["SchemaCatalog"][0].relationClientId,
+						editRecord.catalogClientId);
+				break;
+			case "MetadataRecordContent":
+				dbUpdateMetadata(editRecord.detail,
+						editRecord.metadataRecordContentClientId,
+						metadataType["MetadataRecordContent"]);
+				break;
+			case "MetadataRecordBeginTime":
+				dbUpdateMetadata(editRecord.beginTimeInputString,
+						editRecord.metadataRecordBeginTimeClientId,
+						metadataType["MetadataRecordBeginTime"]);
+				break;
+			case "MetadataRecordEndTime":
+				if (editRecord.metadataRecordEndTimeClientId > 0) {
+					dbUpdateMetadata(editRecord.endTimeInputString,
+							editRecord.metadataRecordEndTimeClientId,
+							metadataType["MetadataRecordEndTime"]);
 				} else {
-					withInputGetNeedSyncRows(0, tableName);
+					insertRecordMetadataTransaction(editRecord.clientId,
+							'MetadataRecordEndTime',
+							editRecord.endTimeInputString);
 				}
-			} else {
-				withInputGetNeedSyncRows(0, tableName);
+				break;
 			}
 		}
 	}
-	function withInputGetNeedSyncRows(lastServerTime, tableName) {
-		db.transaction(
-				withInputDbGetNeedSyncRecords(lastServerTime, tableName),
+	function dbUpdateMetadata(content, contentId, type) {
+		db.transaction(txUpdateMetadata(content, contentId, type), errorCB);
+	}
+	function txUpdateMetadata(content, contentId, type) {
+		return function(tx) {
+			switch (type) {
+			case "string":
+				tx.executeSql(
+						"update local_contents set content=?,modifyStatus=1"
+								+ " where clientId=? and userId=?", [ content,
+								contentId, mLocalParameters['userId'] ]);
+				break;
+			case "intTime":
+				var timeLong = convertDateStringToLong(content);
+				tx.executeSql(
+						"update local_contents set content=cast(? as int),modifyStatus=1"
+								+ " where clientId=? and userId=?", [ timeLong,
+								contentId, mLocalParameters['userId'] ]);
+				break;
+			}
+		}
+	}
+	function updateSingleRelationIdFrom(relationClientId, idFrom) {
+		db.transaction(dbUpdateSingleRelationIdFrom(relationClientId, idFrom),
 				errorCB);
 	}
-
-	function withInputDbGetNeedSyncRecords(lastServerTime, tableName) {
-		return function(tx) {
-			mLocalDbProcess = "dbGetNeedSyncRecords";
-			switch (tableName) {
-			case "local_records":
-				tx
-						.executeSql(
-								"Select serverId,title,detail,beginTime,endTime,state,"
-										+ " serverUpdateTime,titleServerId "
-										+ " from local_records where userId=? "
-										+ "and serverId>0 and modifyStatus = 1 order by clientId limit ? ;",
-								[ mLocalParameters['userId'],
-										LIMIT_UPDATE_BATCH_SIZE ],
-								withInputHandlerSyncDataToServer(
-										lastServerTime, tableName), errorCB);
-				break;
-			case "local_contents":
-				tx
-						.executeSql(
-								"Select serverId,content,state,"
-										+ " serverUpdateTime "
-										+ " from local_contents where userId=? "
-										+ "and serverId>0 and modifyStatus = 1 order by clientId limit ? ;",
-								[ mLocalParameters['userId'],
-										LIMIT_UPDATE_BATCH_SIZE ],
-								withInputHandlerSyncDataToServer(
-										lastServerTime, tableName), errorCB);
-				break;
-			}
-
-		}
-	}
-
-	function withInputHandlerSyncDataToServer(lastServerTime, tableName) {
-		return function(tx, results) {
-			var syncData = {
-				dataRows : [],
-				lastSyncServerTimeFromClient : lastServerTime,
-				clientParameters : mLocalParameters,
-				tableName : tableName
-			};
-			for (var i = 0; i < results.rows.length; i++) {
-				var row = {};
-				switch (tableName) {
-				case "local_records":
-					row.serverId = results.rows.item(i).serverId;
-					row.title = results.rows.item(i).title;
-					row.detail = results.rows.item(i).detail;
-					row.beginTime = results.rows.item(i).beginTime;
-					row.endTime = results.rows.item(i).endTime;
-					row.state = results.rows.item(i).state;
-					row.serverUpdateTime = results.rows.item(i).serverUpdateTime;
-					row.titleServerId = results.rows.item(i).titleServerId;
-					break;
-				case "local_contents":
-					row.serverId = results.rows.item(i).serverId;
-					row.content = results.rows.item(i).content;
-					row.state = results.rows.item(i).state;
-					row.serverUpdateTime = results.rows.item(i).serverUpdateTime;
-					break;
-				}
-				syncData.dataRows.push(row);
-			}
-			syncRecordAjax(mServerUrl, receiveSyncRecordRspAjax,
-					ajaxGetNotSuccessMsg, ajaxNetworkError, syncData, tableName);
-		}
-	}
-
-	function syncRecordAjax(serverUrl, successAjaxProc, errorRsp,
-			ajaxNetworkError, syncData, tableName) {
-		$.ajax({
-			type : "post",
-			url : serverUrl + "sync-record.jsp",
-			async : false,
-			data : JSON.stringify(syncData),
-			dataType : "json",
-			success : function(msg) {
-				if (msg.status == "success") {
-					successAjaxProc(msg, tableName);
-				} else {
-					errorRsp(msg);
-				}
-			},
-			error : ajaxNetworkError
-		});
-	}
-
-	function procServerIdFromServer(tableName) {
-		mLocalDbProcess = "procServerIdFromServer";
-		db.transaction(dbGetCountNeedServerId(tableName), errorCB);
-	}
-
-	function dbGetCountNeedServerId(tableName) {
-		return function(tx) {
-			tx.executeSql("SELECT count(clientId) as total from " + tableName
-					+ " where userId=? and serverId is null ;",
-					[ mLocalParameters['userId'] ],
-					handlerGetCountNeedServerId(tableName), errorCB);
-		}
-	}
-
-	function handlerGetCountNeedServerId(tableName) {
-		return function(tx, results) {
-			if (results.rows.length > 0) {
-				if (results.rows.item(0).total > 0) {
-					if (results.rows.item(0).total > LIMIT_UPDATE_BATCH_SIZE) {
-						needSyncCount = LIMIT_UPDATE_BATCH_SIZE;
-					} else {
-						needSyncCount = results.rows.item(0).total;
-					}
-					getServerIdAjax(mServerUrl, receiveGetServerIdAjax,
-							ajaxGetNotSuccessMsg, ajaxNetworkError,
-							needSyncCount, tableName);
-				} else {
-					// todo no result ;
-					console
-							.log("handlerGetCountNeedServerId:no record need get serverId .");
-					syncLocalToServer(tableName);
-				}
-			} else {
-				// todo no result ;
-				console.log("error ! handlerGetCountNeedServerId");
-			}
-		}
-
-	}
-	function receiveSyncRecordRspAjax(msg, tableName) {
-		for (var i = 0; i < msg.data.length; i++) {
-			if (msg.data[i].serverId != null && msg.data[i].serverId != '') {
-				db.transaction(dbProcReceivedRow(msg.data[i], tableName),
-						errorCB);
-			}
-		}
-		mSyncStatus = 'stop';
-	}
-	function dbProcReceivedRow(row, tableName) {
-		return function(tx) {
-			switch (tableName) {
-			case "local_records":
-				tx
-						.executeSql(
-								"SELECT 1 from local_records where serverId=? and userId=? ;",
-								[ row.serverId, mLocalParameters['userId'] ],
-								updateOrInsertReceivedRecord(row), errorCB);
-				break;
-			case "local_contents":
-				tx
-						.executeSql(
-								"SELECT 1 from local_contents where serverId=? and userId=? ;",
-								[ row.serverId, mLocalParameters['userId'] ],
-								updateOrInsertReceivedTitle(row), errorCB);
-				break;
-			}
-
-		}
-	}
-	function updateOrInsertReceivedTitle(row) {
-		return function(tx, results) {
-			if (results.rows.length > 0) {
-				tx
-						.executeSql(
-								"update local_contents set content = ?  ,"
-										+ "state=? ,serverUpdateTime=?,modifyStatus=0 where serverId=?; ",
-								[ row.content, row.state, row.serverUpdateTime,
-										row.serverId ]);
-			} else {
-				tx
-						.executeSql(
-								"insert into local_contents (userId,content,state,"
-										+ "serverUpdateTime,modifyStatus,serverId) values (?,?,?,?,0,?); ",
-								[ mLocalParameters['userId'], row.content,
-										row.state, row.serverUpdateTime,
-										row.serverId ],
-								updateRecordTitleClientId(row.serverId));
-			}
-		}
-	}
-	// modify insertId . Perhaps no use .
-	function updateRecordTitleClientId(titleServerId) {
-		return function(tx, results) {
-			tx.executeSql('select last_insert_rowid() as id', [],
-					dbGetLastUpdateTitleClientIdToUpdateRecord(titleServerId));
-		}
-	}
-	function dbGetLastUpdateTitleClientIdToUpdateRecord(titleServerId) {
-		return function(tx, results) {
-			tx
-					.executeSql(
-							'update local_records set titleClientId=?,modifyStatus=1 where titleServerId=?',
-							[ results.rows.item(0).id, titleServerId ]);
-		}
-	}
-	function updateOrInsertReceivedRecord(row) {
-		return function(tx, results) {
-			if (results.rows.length > 0) {
-				tx
-						.executeSql(
-								"update local_records set title = ? ,detail = ? ,beginTime = ? ,endTime=?,"
-										+ "state=? ,serverUpdateTime=?,modifyStatus=0,"
-										+ "titleClientId=?,titleServerId=? where serverId=?; ",
-								[ row.title, row.detail, row.beginTime,
-										row.endTime, row.state,
-										row.serverUpdateTime,
-										row.titleClientId, row.titleServerId,
-										row.serverId ]);
-			} else {
-				tx
-						.executeSql(
-								"insert into local_records (userId,title,detail,beginTime,endTime,state,"
-										+ "serverUpdateTime,modifyStatus,serverId,titleClientId,"
-										+ "titleServerId) values (?,?,?,?,?,?,?,0,?,?,?); ",
-								[ mLocalParameters['userId'], row.title,
-										row.detail, row.beginTime, row.endTime,
-										row.state, row.serverUpdateTime,
-										row.serverId, row.titleClientId,
-										row.titleServerId ]);
-			}
-		}
-	}
-
-	function receiveGetServerIdAjax(msg, count, tableName) {
-		currentServerId = bigInt(msg.data);
-		needSyncCount = count;
-		if (currentServerId > 0) {
-			db.transaction(dbProcRowNeedServerId(tableName), errorCB);
-		}
-	}
-
-	function dbProcRowNeedServerId(tableName) {
+	function dbUpdateSingleRelationIdFrom(relationClientId, idFrom) {
 		return function(tx) {
 			tx
 					.executeSql(
-							"SELECT clientId from "
-									+ tableName
-									+ " where userId=? and serverId is null order by clientId limit ? ;",
-							[ mLocalParameters['userId'], needSyncCount ],
-							handlerUpdateClientServerId(tableName), errorCB);
-		}
-	}
-	function handlerUpdateClientServerId(tableName) {
-		return function(tx, results) {
-			if (results.rows.length > 0) {
-				// getTransaction(updateLocalServerId, results,
-				// currentServerId);
-				db.transaction(updateLocalServerId(results, currentServerId,
-						tableName), errorCB)
-
-			} else {
-				// todo no result ;
-				console.log("handlerUpdateClientServerId: no rows .");
-			}
-		}
-	}
-	function updateLocalServerId(resultOfClientID, serverId, tableName) {
-		return function(tx) {
-			for (var i = 0; i < resultOfClientID.rows.length; i++) {
-				if (tableName == "local_contents") {
-					tx.executeSql("update " + tableName
-							+ " set serverId=? where clientId = ?; ", [
-							serverId.toString(),
-							resultOfClientID.rows.item(i).clientId ],
-							dbGetLastUpdateTitleServerId(serverId.toString(),
-									resultOfClientID.rows.item(i).clientId));
-				} else {
-					tx.executeSql("update " + tableName
-							+ " set serverId=? where clientId = ?; ", [
-							serverId.toString(),
-							resultOfClientID.rows.item(i).clientId ]);
-				}
-				serverId = serverId.add(1);
-			}
-			syncLocalToServer(tableName);
+							"update local_relations set idFrom=?,modifyStatus=1 where clientId=?",
+							[ idFrom, relationClientId ]);
 		}
 	}
 
-	function dbGetLastUpdateTitleServerId(titleServerId, titleClientId) {
-		return function(tx, results) {
-			tx
-					.executeSql(
-							'update local_records set titleServerId=?,modifyStatus=1 where titleClientId=?',
-							[ titleServerId, titleClientId ]);
-		}
-	}
-
-	function getServerIdAjax(serverUrl, successGetServerIdAjaxProc, errorRsp,
-			ajaxNetworkError, needCount, tableName) {
-		var oriData = {
-			amount : needCount,
-			keyTitle : tableName
-		};
-		$.ajax({
-			type : "post",
-			url : serverUrl + "get-server-id.jsp",
-			async : false,
-			data : JSON.stringify(oriData),
-			dataType : "json",
-			success : function(msg) {
-				if (msg.status == "success") {
-					successGetServerIdAjaxProc(msg, needCount, tableName);
-				} else {
-					errorRsp(msg);
-				}
-			},
-			error : ajaxNetworkError
-		});
-	}
 }
