@@ -475,7 +475,6 @@ function convertDateStringToLong(inputString) {
 }
 
 function showViewRecord(catalogId) {
-	console.log("showViewRecord:" + catalogId);
 	queryRecordAndDisplay(catalogId);
 	if (catalogId != null && catalogId > 0) {
 		divRecordFormNew(catalogId);
@@ -826,8 +825,7 @@ function dbInsertAccountInfo(userName, password) {
 function dbUpdateSingleRecord(editRecord, updateArray) {
 	return function(tx) {
 		updateArray.forEach(procMetadataForUpdateRecord(editRecord));
-
-		// showViewRecord();
+		showViewRecord(editRecord.catalogClientId);
 	}
 	function procMetadataForUpdateRecord(editRecord) {
 		return function(element, index, array) {
