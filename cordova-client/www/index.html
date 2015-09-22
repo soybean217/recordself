@@ -28,9 +28,10 @@
 <script src="js/jquery.validate.min.js"></script>
 <script src="js/bootstrap-datetimepicker.min.js"></script>
 <script src="js/BigInteger.min.js"></script>
-<script src="js/inc-functions.js"></script>
-<script src="js/local-db-parameters.js"></script>
-<script src="js/index.js"></script>
+<script src="js/record-inc-functions.js"></script>
+<script src="js/record-local-db-parameters.js"></script>
+<script src="js/record-index.js"></script>
+<script src="js/record-sync-server.js"></script>
 <script src="cordova.js"></script>
 <script src="SQLitePlugin.js"></script>
 <script>
@@ -115,19 +116,25 @@
 			</script>
 			<select id="selectCatalog"></select> <input type="text"
 				id="recordEditDetail" class="form-control" name="recordEditDetail"
-				autofocus><input type="hidden" id="recordEditId"
-				class="form-control" name="recordEditId">
+				autofocus><input type="hidden"
+				id="metadataRecordContentClientId" class="form-control"
+				name="metadataRecordContentClientId"><input type="hidden"
+				class="form-control" name="recordEditId" id="recordEditId">
 			<div class="row" id="recordEditTimePicker">
 				<script>
 					document.write(globalization_begin_time);
 				</script>
 				:<input size="14" type="text" id="recordEditBeginTime"
-					class="form_datetime">
+					class="form_datetime"><input type="hidden"
+					id="metadataRecordBeginTimeClientId" class="form-control"
+					name="metadataRecordBeginTimeClientId">
 				<script>
 					document.write(globalization_end_time);
 				</script>
 				:<input size="14" type="text" id="recordEditEndTime"
-					class="form_datetime">
+					class="form_datetime"><input type="hidden"
+					id="metadataRecordEndTimeClientId" class="form-control"
+					name="metadataRecordEndTimeClientId">
 			</div>
 			<div class="row" id="recordEditButtonGroup">
 				<div class="btn-group" role="group" aria-label="...">
@@ -139,6 +146,11 @@
 					<button type="button" class="btn btn-warning" id="recordEditDelete">
 						<script>
 							document.write(globalization_delete);
+						</script>
+					</button>
+					<button type="button" class="btn btn-default" id="recordEditRepeat">
+						<script>
+							document.write(globalization_repeat);
 						</script>
 					</button>
 				</div>
@@ -182,7 +194,7 @@
 		var LIMIT_UPDATE_BATCH_SIZE = 100;
 		var divArray = new Array();
 		var databaseStatus = "empty";
-		var mJsonMsg, mLocalDbProcess, mLocalParameters, mNeedServerIdCount;
+		var mJsonMsg, mLocalDbProcess, mLocalParameters, mNeedServerIdCount, mCurrentRecord;
 		var mRecordDataSet, mTitleDataSet;
 		var mRecordTable, mTitleTable;
 		var mLastSyncTime = (new Date()).valueOf();

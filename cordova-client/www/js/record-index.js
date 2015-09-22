@@ -92,6 +92,16 @@ function formInitial() {
 		console.log("recordEditDelete");
 		deleteRecordWithId();
 	})
+	$("#recordEditRepeat")
+			.click(
+					function() {
+						console
+								.log(mCurrentRecord['SchemaCatalog'][0].contentClientId);
+						divRecordFormNew(mCurrentRecord['SchemaCatalog'][0].contentClientId);
+						$("#recordEditDetail")
+								.val(
+										mCurrentRecord['MetadataRecordContent'][0].content);
+					})
 }
 
 function setupRecordListFromDb() {
@@ -159,7 +169,7 @@ function setupCatalogListFromDb() {
 		} ]
 	});
 	$('#tableCatalog tbody').on('click', 'tr', function() {
-		showViewRecord(mTitleTable.row(this).data())
+		showViewRecord(mTitleTable.row(this).data()[0])
 	});
 }
 
@@ -332,7 +342,7 @@ function divControl() {
 		}
 	});
 }
-function divRecordFormNew() {
+function divRecordFormNew(catalogId) {
 	$("#recordEditButtonGroup").hide();
 	$("#recordEditTimePicker").hide();
 	$("#recordEditAddNew").show();
@@ -343,12 +353,15 @@ function divRecordFormNew() {
 		autoclose : 1,
 		initialDate : new Date()
 	});
+	if (catalogId != null && catalogId > 0) {
+		$("#selectCatalog").val(catalogId);
+	}
 }
-function queryRecordAndDisplay(catalogInfoArray) {
+function queryRecordAndDisplay(catalogId) {
 	divControl("#divMenu", "#divRecord", "#divDisplayRecordList",
 			"#divMenuAfterSignIn");
 	mLocalDbProcess = "queryRecordAndDisplay";
-	db.transaction(dbQueryRecord(catalogInfoArray), errorCB);
+	db.transaction(dbQueryRecord(catalogId), errorCB);
 }
 function queryCatalogAndDisplay() {
 	divControl("#divMenu", "#divCatalogForm", "#divCatalogList",
@@ -356,9 +369,9 @@ function queryCatalogAndDisplay() {
 	mLocalDbProcess = "queryCatalogAndDisplay";
 	db.transaction(dbQueryCatalog, errorCB);
 }
-function dbQueryRecord(catalogInfoArray) {
+function dbQueryRecord(catalogId) {
 	return function(tx) {
-		if (catalogInfoArray != null && catalogInfoArray[0] > 0) {
+		if (catalogId != null && catalogId > 0) {
 			tx
 					.executeSql(
 							"SELECT r.idFrom AS clientId,c.serverId AS serverId,c.content AS title,'detail' AS detail,"
@@ -368,14 +381,14 @@ function dbQueryRecord(catalogInfoArray) {
 									+ " WHERE r.idFrom IN (SELECT clientId FROM local_contents "
 									+ " WHERE state<>-1 and contentType='SchemaRecord' and userId= ? "
 									+ "  and (clientId IN (SELECT idTo FROM `local_relations` WHERE idFrom = ? ) "
-									+ "  OR clientId IN (SELECT idTo FROM `local_relations` WHERE idFrom = ? )) "
+									+ "  OR clientId IN (SELECT idTo FROM `local_relations` "
+									+ " WHERE idFrom = (select serverId from local_contents where clientId=?) )) "
 									+ " AND r.idTo = c.clientId AND c.contentType='MetadataRecordContent'"
 									+ "  ) "
 									+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.clientId DESC"
 									+ " limit 0,20;", [
-									mLocalParameters['userId'],
-									catalogInfoArray[0], catalogInfoArray[3] ],
-							refreshRecordListView, errorCB);
+									mLocalParameters['userId'], catalogId,
+									catalogId ], refreshRecordListView, errorCB);
 
 		} else {
 			tx
@@ -461,12 +474,14 @@ function convertDateStringToLong(inputString) {
 	}
 }
 
-function showViewRecord(catalogInfoArray) {
-	queryRecordAndDisplay(catalogInfoArray);
-	if (catalogInfoArray != null && catalogInfoArray != "") {
-		$("#selectCatalog").val(catalogInfoArray[0]);
+function showViewRecord(catalogId) {
+	console.log("showViewRecord:" + catalogId);
+	queryRecordAndDisplay(catalogId);
+	if (catalogId != null && catalogId > 0) {
+		divRecordFormNew(catalogId);
+	} else {
+		divRecordFormNew();
 	}
-	divRecordFormNew();
 }
 /**
  * insert record to local
@@ -492,13 +507,11 @@ function processRecordMetadata(editRecord) {
 		// sync get catalogServerId
 		var catalogServerId = getContentServerIdByClientId(editRecord.catalogClientId);
 		if (catalogServerId > 0) {
-			console.log("true trace catalog bug:" + editRecord.titleServerId);
-			db.transaction(insertRelation(catalogServerId, results.insertId),
-					errorCB);
-		} else {
-			console.log("false trace catalog bug:" + editRecord.titleServerId);
-			db.transaction(insertRelation(editRecord.catalogClientId,
+			db.transaction(insertRelationFreshCatalog(catalogServerId,
 					results.insertId), errorCB);
+		} else {
+			db.transaction(insertRelationFreshCatalog(
+					editRecord.catalogClientId, results.insertId), errorCB);
 		}
 	}
 }
@@ -565,6 +578,13 @@ function insertRelation(idFrom, idTo) {
 		tx.executeSql("insert into local_relations (userId,idFrom,idTo"
 				+ " ) values (?,?,?)", [ mLocalParameters['userId'], idFrom,
 				idTo ]);
+	}
+}
+function insertRelationFreshCatalog(idFrom, idTo) {
+	return function(tx) {
+		tx.executeSql("insert into local_relations (userId,idFrom,idTo"
+				+ " ) values (?,?,?)", [ mLocalParameters['userId'], idFrom,
+				idTo ], showViewRecord(idFrom));
 	}
 }
 
