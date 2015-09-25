@@ -368,6 +368,7 @@ function queryCatalogAndDisplay() {
 			"#divMenuAfterSignIn");
 	mLocalDbProcess = "queryCatalogAndDisplay";
 	db.transaction(dbQueryCatalog, errorCB);
+	$("#catalogEditContent").val("");
 }
 function dbQueryRecord(catalogId) {
 	return function(tx) {
@@ -512,6 +513,10 @@ function processRecordMetadata(editRecord) {
 			db.transaction(insertRelationFreshCatalog(
 					editRecord.catalogClientId, results.insertId), errorCB);
 		}
+		db
+				.transaction(
+						dbUpdateConentLastLocalTimeByClientId(editRecord.catalogClientId),
+						errorCB);
 	}
 }
 
@@ -821,10 +826,22 @@ function dbInsertAccountInfo(userName, password) {
 	}
 }
 
+function dbUpdateConentLastLocalTimeByClientId(contentClientId) {
+	return function(tx) {
+		tx.executeSql("update local_contents set lastLocalTime=?"
+				+ " where clientId=? and userId=?", [ (new Date()).valueOf(),
+				contentClientId, mLocalParameters['userId'] ]);
+	}
+}
+
 // update record to local
 function dbUpdateSingleRecord(editRecord, updateArray) {
 	return function(tx) {
 		updateArray.forEach(procMetadataForUpdateRecord(editRecord));
+		db
+				.transaction(
+						dbUpdateConentLastLocalTimeByClientId(editRecord.catalogClientId),
+						errorCB);
 		showViewRecord(editRecord.catalogClientId);
 	}
 	function procMetadataForUpdateRecord(editRecord) {
