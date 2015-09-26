@@ -379,12 +379,12 @@ function dbQueryRecord(catalogId) {
 									+ " c.serverUpdateTime AS serverUpdateTime,c.modifyStatus AS modifyStatus,"
 									+ " c.lastLocalTime as lastLocalTime,1 as endTime,1 as titleClientId,r.idFrom,r.idTo "
 									+ " FROM `local_contents` as c , `local_relations` as r "
-									+ " WHERE r.idFrom IN (SELECT clientId FROM local_contents "
+									+ " WHERE r.idTo = c.clientId and r.idFrom IN (SELECT clientId FROM local_contents "
 									+ " WHERE state<>-1 and contentType='SchemaRecord' and userId= ? "
 									+ "  and (clientId IN (SELECT idTo FROM `local_relations` WHERE idFrom = ? ) "
 									+ "  OR clientId IN (SELECT idTo FROM `local_relations` "
 									+ " WHERE idFrom = (select serverId from local_contents where clientId=?) )) "
-									+ " AND r.idTo = c.clientId AND c.contentType='MetadataRecordContent'"
+									+ " AND c.contentType='MetadataRecordContent'"
 									+ "  ) "
 									+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.clientId DESC"
 									+ " limit 0,20;", [
@@ -628,7 +628,7 @@ function deleteRecordWithId() {
 	db.transaction(dbDeleteSingleRecord, errorCB);
 }
 function dbDeleteSingleRecord(tx) {
-	console.log("dbDeleteSingleRecord");
+	console.log("dbDeleteSingleRecord:"+$("#recordEditId").val());
 	tx
 			.executeSql(
 					"update local_records set state = -1 ,modifyStatus=1 where clientId = ?; ",
