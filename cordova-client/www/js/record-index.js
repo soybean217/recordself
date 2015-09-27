@@ -89,7 +89,6 @@ function formInitial() {
 		}
 	});
 	$("#recordEditDelete").click(function() {
-		console.log("recordEditDelete");
 		deleteRecordWithId();
 	})
 	$("#recordEditRepeat")
@@ -628,14 +627,13 @@ function deleteRecordWithId() {
 	db.transaction(dbDeleteSingleRecord, errorCB);
 }
 function dbDeleteSingleRecord(tx) {
-	console.log("dbDeleteSingleRecord:"+$("#recordEditId").val());
 	tx
 			.executeSql(
-					"update local_records set state = -1 ,modifyStatus=1 where clientId = ?; ",
+					"update local_contents set state = -1 ,modifyStatus=1 where clientId = ?; ",
 					[ $("#recordEditId").val() ]);
 	tx
 			.executeSql(
-					"update local_records set state = -1 ,modifyStatus=1"
+					"update local_contents set state = -1 ,modifyStatus=1"
 							+ " where clientId in (select idTo from local_relations where idFrom = ?);",
 					[ $("#recordEditId").val() ]);
 	tx.executeSql("update local_relations set state = -1 ,modifyStatus=1"
