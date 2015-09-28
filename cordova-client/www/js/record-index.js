@@ -89,7 +89,9 @@ function formInitial() {
 		}
 	});
 	$("#recordEditDelete").click(function() {
-		deleteRecordWithId();
+		if (confirm(globalization_confirm_delete)) {
+			deleteRecordWithId();
+		}
 	})
 	$("#recordEditRepeat")
 			.click(
@@ -638,7 +640,7 @@ function dbDeleteSingleRecord(tx) {
 					[ $("#recordEditId").val() ]);
 	tx.executeSql("update local_relations set state = -1 ,modifyStatus=1"
 			+ " where  idFrom = ?;", [ $("#recordEditId").val() ]);
-	showViewRecord($("selectCatalog").val());
+	showViewRecord($("#selectCatalog").val());
 }
 
 function divRecordFormFill(recordId) {

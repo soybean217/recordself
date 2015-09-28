@@ -20,3 +20,4 @@ var globalization_catalog = "目录";
 var globalization_all = "全部";
 var globalization_add_catalog = "增加目录";
 var globalization_modify_catalog = "修改目录";
+var globalization_confirm_delete = "确认删除 ?";

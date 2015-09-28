@@ -20,3 +20,4 @@ var globalization_catalog = "Catalog";
 var globalization_all = "All";
 var globalization_add_catalog = "Add Catalog";
 var globalization_modify_catalog = "Modify Catalog";
+var globalization_confirm_delete = "Confirm Delete ?";
