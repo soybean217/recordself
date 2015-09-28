@@ -96,12 +96,11 @@ function formInitial() {
 	$("#recordEditRepeat")
 			.click(
 					function() {
-						console
-								.log(mCurrentRecord['SchemaCatalog'][0].contentClientId);
 						divRecordFormNew(mCurrentRecord['SchemaCatalog'][0].contentClientId);
 						$("#recordEditDetail")
 								.val(
 										mCurrentRecord['MetadataRecordContent'][0].content);
+						$("#recordEditBeginTime").val("");
 					})
 }
 
@@ -138,7 +137,7 @@ function setupRecordListFromDb() {
 	});
 	$('#tableRecord tbody').on('click', 'tr', function() {
 		divRecordFormFill(mRecordTable.row(this).data()[0]);
-		location.hash = 'divRecord';
+		document.getElementById('divRecord').scrollIntoView()
 	});
 }
 
@@ -388,9 +387,10 @@ function dbQueryRecord(catalogId) {
 									+ " AND c.contentType='MetadataRecordContent'"
 									+ "  ) "
 									+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.clientId DESC"
-									+ " limit 0,20;", [
+									+ " limit 0,?;", [
 									mLocalParameters['userId'], catalogId,
-									catalogId ], refreshRecordListView, errorCB);
+									catalogId, mRecordLimit ],
+							refreshRecordListView, errorCB);
 
 		} else {
 			tx
@@ -403,8 +403,8 @@ function dbQueryRecord(catalogId) {
 									+ " WHERE state<>-1 and contentType='SchemaRecord' and userId= ? ) "
 									+ " AND r.idTo = c.clientId AND c.contentType='MetadataRecordContent' "
 									+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.clientId DESC"
-									+ " limit 0,20;",
-							[ mLocalParameters['userId'] ],
+									+ " limit 0,?;", [
+									mLocalParameters['userId'], mRecordLimit ],
 							refreshRecordListView, errorCB);
 		}
 	}
