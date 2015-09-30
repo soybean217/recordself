@@ -178,6 +178,7 @@ function editCatalogProcess(info) {
 		if (info.id > 0) {
 			// update
 			mLocalDbProcess = "updateCatalog";
+			db.transaction(dbUpdateCatalog(info), errorCB);
 		} else {
 			// insert
 			mLocalDbProcess = "insertCatalog";
@@ -242,6 +243,17 @@ function dbInsertCatalog(info) {
 						+ " ) values (?,?,?,'SchemaCatalog')", [
 						mLocalParameters['userId'], info.title,
 						(new Date()).valueOf() ], queryCatalogAndDisplay());
+	}
+}
+
+function dbUpdateCatalog(info) {
+	return function(tx) {
+		tx
+				.executeSql(
+						"update local_contents set state = -1 , content = ? , lastLocalTime = ? where clientId = ? and userId = ?",
+						[ info.title, (new Date()).valueOf(), info.id,
+								mLocalParameters['userId'] ],
+						queryCatalogAndDisplay());
 	}
 }
 
@@ -359,16 +371,24 @@ function divRecordFormNew(catalogId) {
 }
 function queryRecordAndDisplay(catalogId) {
 	divControl("#divMenu", "#divRecord", "#divDisplayRecordList",
-			"#divMenuAfterSignIn");
+			"#divCatalogForm", "#divMenuAfterSignIn");
+	$("#catalogEditSubmit").text(globalization_modify_catalog);
+	if (mCurrentCatalogMap[catalogId] != null
+			&& mCurrentCatalogMap[catalogId][1] != null) {
+		$("#catalogEditContent").val(mCurrentCatalogMap[catalogId][1]);
+		$("#catalogEditId").val(catalogId);
+	}
 	mLocalDbProcess = "queryRecordAndDisplay";
 	db.transaction(dbQueryRecord(catalogId), errorCB);
 }
 function queryCatalogAndDisplay() {
 	divControl("#divMenu", "#divCatalogForm", "#divCatalogList",
 			"#divMenuAfterSignIn");
+	$("#catalogEditSubmit").text(globalization_add_catalog);
 	mLocalDbProcess = "queryCatalogAndDisplay";
 	db.transaction(dbQueryCatalog, errorCB);
 	$("#catalogEditContent").val("");
+	$("#catalogEditId").val("");
 }
 function dbQueryRecord(catalogId) {
 	return function(tx) {
@@ -438,11 +458,11 @@ function dbQueryCatalog(tx) {
 					"SELECT clientId,serverId,content,lastLocalTime "
 							+ " from local_contents where userId=? and contentType='SchemaCatalog' "
 							+ " order by lastLocalTime desc ;",
-					[ mLocalParameters['userId'] ], refreshTitleListView,
+					[ mLocalParameters['userId'] ], txRefreshTitleListView,
 					errorCB);
 }
-// Display the title
-function refreshTitleListView(tx, results) {
+// Display the catalog
+function txRefreshTitleListView(tx, results) {
 	var mRow = [];
 	mTitleDataSet = [];
 	var len = results.rows.length;
@@ -456,11 +476,11 @@ function refreshTitleListView(tx, results) {
 						.Format("yyyy-MM-dd hh:mm"),
 				results.rows.item(i).serverId ];
 		mTitleDataSet[i] = mRow;
+		mCurrentCatalogMap[results.rows.item(i).clientId] = mRow;
 		$("#selectCatalog").append(
 				"<option value='" + results.rows.item(i).clientId + "'>"
 						+ results.rows.item(i).content + "</option>");
 	}
-
 	mTitleTable.clear();
 	mTitleTable.rows.add(mTitleDataSet);
 	mTitleTable.draw();
