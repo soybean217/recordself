@@ -356,7 +356,8 @@ function divControl() {
 }
 function divRecordFormNew(catalogId) {
 	$("#recordEditButtonGroup").hide();
-	$("#recordEditTimePicker").hide();
+	$("#recordEditBeginTimePicker").hide();
+	$("#recordEditEndTimePicker").hide();
 	$("#recordEditAddNew").show();
 	$("#recordEditId").val(null);
 	$("#recordEditDetail").val(null);
@@ -730,7 +731,8 @@ function divRecordFormFill(recordId) {
 			}
 			$("#recordEditBeginTime").show();
 			$("#recordEditEndTime").show();
-			$("#recordEditTimePicker").show();
+			$("#recordEditBeginTimePicker").show();
+			$("#recordEditEndTimePicker").show();
 			$("#recordEditButtonGroup").show();
 			$("#recordEditAddNew").hide();
 		}

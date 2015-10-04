@@ -120,7 +120,7 @@
 				id="metadataRecordContentClientId" class="form-control"
 				name="metadataRecordContentClientId"><input type="hidden"
 				class="form-control" name="recordEditId" id="recordEditId">
-			<div class="row" id="recordEditTimePicker">
+			<div class="row" id="recordEditBeginTimePicker">
 				<script>
 					document.write(globalization_begin_time);
 				</script>
@@ -128,6 +128,8 @@
 					class="form_datetime"><input type="hidden"
 					id="metadataRecordBeginTimeClientId" class="form-control"
 					name="metadataRecordBeginTimeClientId">
+			</div>
+			<div class="row" id="recordEditEndTimePicker">
 				<script>
 					document.write(globalization_end_time);
 				</script>
@@ -194,13 +196,13 @@
 		var LIMIT_UPDATE_BATCH_SIZE = 100;
 		var divArray = new Array();
 		var databaseStatus = "empty";
-		var mJsonMsg, mLocalDbProcess, mLocalParameters,mCurrentCatalogMap, mNeedServerIdCount, mCurrentRecord;
+		var mJsonMsg, mLocalDbProcess, mLocalParameters, mCurrentCatalogMap, mNeedServerIdCount, mCurrentRecord;
 		var mRecordDataSet, mTitleDataSet;
 		var mRecordTable, mTitleTable;
 		var mLastSyncTime = (new Date()).valueOf();
 		var mSyncStatus = 'stop';
 		var mSyncTimeout = 60000;
-		var mRecordLimit = 40 ;
+		var mRecordLimit = 40;
 		mLocalParameters = {};
 		mCurrentCatalogMap = {};
 		divArray.push($("#divSignIn"));
