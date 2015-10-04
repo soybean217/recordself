@@ -13,10 +13,11 @@
 <meta name="author" content="FuMing">
 
 <title>Login</title>
-<!-- Bootstrap core CSS -->
-<link rel="stylesheet" href="css/bootstrap.min.css">
-<link rel="stylesheet" href="css/jquery.dataTables-1.10.7.css">
-<link rel="stylesheet" href="css/bootstrap-datetimepicker.min.css">
+<link rel="stylesheet" media="screen" href="css/bootstrap.min.css">
+<link rel="stylesheet" media="screen"
+	href="css/bootstrap-datetimepicker.min.css">
+<link rel="stylesheet" media="screen"
+	href="css/jquery.dataTables-1.10.7.css">
 <!-- JQUERY validate CSS -->
 <link rel="stylesheet" href="css/screen.css">
 <!-- close when release -->
@@ -121,22 +122,38 @@
 				name="metadataRecordContentClientId"><input type="hidden"
 				class="form-control" name="recordEditId" id="recordEditId">
 			<div class="row" id="recordEditBeginTimePicker">
-				<script>
+				<label for="dtp_input_begin_time" class="col-md-2 control-label"><script>
 					document.write(globalization_begin_time);
-				</script>
-				:<input size="14" type="text" id="recordEditBeginTime"
-					class="form_datetime"><input type="hidden"
-					id="metadataRecordBeginTimeClientId" class="form-control"
-					name="metadataRecordBeginTimeClientId">
+				</script></label>
+				<div class="input-group date form_datetime col-md-5"
+					data-link-field="dtp_input_begin_time">
+					<input class="form-control" size="14" type="text" value=""
+						id="recordEditBeginTime" name="recordEditBeginTime"> <input
+						type="hidden" id="metadataRecordBeginTimeClientId"
+						class="form-control" name="metadataRecordBeginTimeClientId">
+					<span class="input-group-addon"><span
+						class="glyphicon glyphicon-remove"></span></span> <span
+						class="input-group-addon"><span
+						class="glyphicon glyphicon-th"></span></span>
+				</div>
+				<input type="hidden" id="dtp_input_begin_time" value="" /><br />
 			</div>
 			<div class="row" id="recordEditEndTimePicker">
-				<script>
+				<label for="dtp_input_end_time" class="col-md-2 control-label"><script>
 					document.write(globalization_end_time);
-				</script>
-				:<input size="14" type="text" id="recordEditEndTime"
-					class="form_datetime"><input type="hidden"
-					id="metadataRecordEndTimeClientId" class="form-control"
-					name="metadataRecordEndTimeClientId">
+				</script></label>
+				<div class="input-group date form_datetime col-md-5"
+					data-link-field="dtp_input_end_time">
+					<input class="form-control" size="14" type="text" value=""
+						id="recordEditEndTime" name="recordEditEndTime"> <input
+						type="hidden" id="metadataRecordEndTimeClientId"
+						class="form-control" name="metadataRecordEndTimeClientId">
+					<span class="input-group-addon"><span
+						class="glyphicon glyphicon-remove"></span></span> <span
+						class="input-group-addon"><span
+						class="glyphicon glyphicon-th"></span></span>
+				</div>
+				<input type="hidden" id="dtp_input_end_time" value="" /><br />
 			</div>
 			<div class="row" id="recordEditButtonGroup">
 				<div class="btn-group" role="group" aria-label="...">
