@@ -364,6 +364,7 @@ function divRecordFormNew(catalogId) {
 	$(".form_datetime").datetimepicker({
 		format : 'yyyy-mm-dd hh:ii',
 		autoclose : 1,
+		todayBtn:  1,
 		initialDate : new Date()
 	});
 	if (catalogId != null && catalogId > 0) {

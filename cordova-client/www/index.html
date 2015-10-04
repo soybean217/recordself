@@ -122,10 +122,11 @@
 				name="metadataRecordContentClientId"><input type="hidden"
 				class="form-control" name="recordEditId" id="recordEditId">
 			<div class="row" id="recordEditBeginTimePicker">
-				<label for="dtp_input_begin_time" class="col-md-2 control-label"><script>
+				<label for="dtp_input_begin_time" class="col-md-1 control-label"><script>
 					document.write(globalization_begin_time);
 				</script></label>
-				<div class="input-group date form_datetime col-md-5"
+				<input type="hidden" id="dtp_input_begin_time" value="" />
+				<div class="input-group date form_datetime col-md-3"
 					data-link-field="dtp_input_begin_time">
 					<input class="form-control" size="14" type="text" value=""
 						id="recordEditBeginTime" name="recordEditBeginTime"> <input
@@ -136,13 +137,12 @@
 						class="input-group-addon"><span
 						class="glyphicon glyphicon-th"></span></span>
 				</div>
-				<input type="hidden" id="dtp_input_begin_time" value="" /><br />
 			</div>
 			<div class="row" id="recordEditEndTimePicker">
-				<label for="dtp_input_end_time" class="col-md-2 control-label"><script>
+				<label for="dtp_input_end_time" class="col-md-1 control-label"><script>
 					document.write(globalization_end_time);
 				</script></label>
-				<div class="input-group date form_datetime col-md-5"
+				<div class="input-group date form_datetime col-md-3"
 					data-link-field="dtp_input_end_time">
 					<input class="form-control" size="14" type="text" value=""
 						id="recordEditEndTime" name="recordEditEndTime"> <input
@@ -153,7 +153,7 @@
 						class="input-group-addon"><span
 						class="glyphicon glyphicon-th"></span></span>
 				</div>
-				<input type="hidden" id="dtp_input_end_time" value="" /><br />
+				<input type="hidden" id="dtp_input_end_time" value="" />
 			</div>
 			<div class="row" id="recordEditButtonGroup">
 				<div class="btn-group" role="group" aria-label="...">
