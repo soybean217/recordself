@@ -63,9 +63,7 @@ function formInitial() {
 	$("#formRecord").submit(function(e) {
 		e.preventDefault();
 		if ($("#formRecord").valid()) {
-			procInsertOrUpdateRecord()
-			// db.transaction(insertOrUpdateRecord($("#selectCatalog")
-			// .val()), errorCB);
+			procInsertOrUpdateRecord();
 		}
 	});
 	$("#formCatalog").validate({
@@ -361,12 +359,6 @@ function divRecordFormNew(catalogId) {
 	$("#recordEditAddNew").show();
 	$("#recordEditId").val(null);
 	$("#recordEditDetail").val(null);
-	$(".form_datetime").datetimepicker({
-		format : 'yyyy-mm-dd hh:ii',
-		autoclose : 1,
-		todayBtn:  1,
-		initialDate : new Date()
-	});
 	if (catalogId != null && catalogId > 0) {
 		$("#selectCatalog").val(catalogId);
 	}

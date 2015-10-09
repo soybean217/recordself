@@ -18,6 +18,8 @@
 	href="css/bootstrap-datetimepicker.min.css">
 <link rel="stylesheet" media="screen"
 	href="css/jquery.dataTables-1.10.7.css">
+<link type="text/css" href="css/jquery.simple-dtpicker.css"
+	rel="stylesheet" />
 <!-- JQUERY validate CSS -->
 <link rel="stylesheet" href="css/screen.css">
 <!-- close when release -->
@@ -28,6 +30,7 @@
 <script src="js/jquery.dataTables-1.10.7.min.js"></script>
 <script src="js/jquery.validate.min.js"></script>
 <script src="js/bootstrap-datetimepicker.min.js"></script>
+<script src="js/jquery.simple-dtpicker.js"></script>
 <script src="js/BigInteger.min.js"></script>
 <script src="js/record-inc-functions.js"></script>
 <script src="js/record-local-db-parameters.js"></script>
@@ -121,39 +124,80 @@
 				id="metadataRecordContentClientId" class="form-control"
 				name="metadataRecordContentClientId"><input type="hidden"
 				class="form-control" name="recordEditId" id="recordEditId">
-			<div class="row" id="recordEditBeginTimePicker">
-				<label for="dtp_input_begin_time" class="col-md-1 control-label"><script>
+			<div id="recordEditBeginTimePicker">
+				<script>
 					document.write(globalization_begin_time);
-				</script></label>
-				<input type="hidden" id="dtp_input_begin_time" value="" />
-				<div class="input-group date form_datetime col-md-3"
-					data-link-field="dtp_input_begin_time">
-					<input class="form-control" size="14" type="text" value=""
-						id="recordEditBeginTime" name="recordEditBeginTime"> <input
-						type="hidden" id="metadataRecordBeginTimeClientId"
-						class="form-control" name="metadataRecordBeginTimeClientId">
-					<span class="input-group-addon"><span
-						class="glyphicon glyphicon-remove"></span></span> <span
-						class="input-group-addon"><span
-						class="glyphicon glyphicon-th"></span></span>
-				</div>
+				</script>
+				<input type="text" name="recordEditBeginTime"
+					id="recordEditBeginTime" value="" size="14"> <input
+					type="hidden" class="form-control"
+					name="metadataRecordBeginTimeClientId"
+					id="metadataRecordBeginTimeClientId">
+				<script type="text/javascript">
+					$(function() {
+						$('*[name=recordEditBeginTime]').appendDtpicker();
+					});
+				</script>
+				<span id="recordEditBeginTimeHide" class="glyphicon glyphicon-off"
+					aria-hidden="true"></span>
+				<script>
+					$(function() {
+						$('#recordEditBeginTimeHide').click(function() {
+							$('#recordEditBeginTime').handleDtpicker('hide');
+						});
+					});
+				</script>
+				<span id="recordEditBeginTimeCurrent"
+					class="glyphicon glyphicon-time" aria-hidden="true"></span>
+				<script>
+					$(function() {
+						$('#recordEditBeginTimeCurrent')
+								.click(
+										function() {
+											$('#recordEditBeginTime')
+													.val(
+															new Date()
+																	.Format("yyyy-MM-dd hh:mm"));
+										});
+					});
+				</script>
 			</div>
-			<div class="row" id="recordEditEndTimePicker">
-				<label for="dtp_input_end_time" class="col-md-1 control-label"><script>
+			<div id="recordEditEndTimePicker">
+				<script>
 					document.write(globalization_end_time);
-				</script></label>
-				<div class="input-group date form_datetime col-md-3"
-					data-link-field="dtp_input_end_time">
-					<input class="form-control" size="14" type="text" value=""
-						id="recordEditEndTime" name="recordEditEndTime"> <input
-						type="hidden" id="metadataRecordEndTimeClientId"
-						class="form-control" name="metadataRecordEndTimeClientId">
-					<span class="input-group-addon"><span
-						class="glyphicon glyphicon-remove"></span></span> <span
-						class="input-group-addon"><span
-						class="glyphicon glyphicon-th"></span></span>
-				</div>
-				<input type="hidden" id="dtp_input_end_time" value="" />
+				</script>
+				<input type="text" name="recordEditEndTime" id="recordEditEndTime"
+					value="" size="14"> <input type="hidden"
+					class="form-control" name="metadataRecordEndTimeClientId"
+					id="metadataRecordEndTimeClientId">
+				<script type="text/javascript">
+					$(function() {
+						$('*[name=recordEditEndTime]').appendDtpicker();
+					});
+				</script>
+				<span id="recordEditEndTimeHide" class="glyphicon glyphicon-off"
+					aria-hidden="true"></span>
+				<script>
+					$(function() {
+						$('#recordEditEndTimeHide').click(function() {
+							$('#recordEditEndTime').handleDtpicker('hide');
+						});
+					});
+				</script>
+				<span id="recordEditEndTimeCurrent" class="glyphicon glyphicon-time"
+					aria-hidden="true"></span>
+				<script>
+					$(function() {
+						$('#recordEditEndTimeCurrent')
+								.click(
+										function() {
+											$('#recordEditEndTime')
+													.val(
+															new Date()
+																	.Format("yyyy-MM-dd hh:mm"));
+										});
+					});
+				</script>
 			</div>
 			<div class="row" id="recordEditButtonGroup">
 				<div class="btn-group" role="group" aria-label="...">
