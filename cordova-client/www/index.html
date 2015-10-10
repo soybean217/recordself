@@ -129,8 +129,9 @@
 					document.write(globalization_begin_time);
 				</script>
 				<input type="text" name="recordEditBeginTime"
-					id="recordEditBeginTime" value="" size="14"> <input
-					type="hidden" class="form-control"
+					id="recordEditBeginTime" value="" size="14"
+					onblur="javascript:$('#recordEditBeginTime').handleDtpicker('hide');">
+				<input type="hidden" class="form-control"
 					name="metadataRecordBeginTimeClientId"
 					id="metadataRecordBeginTimeClientId">
 				<script type="text/javascript">
@@ -138,8 +139,10 @@
 						$('*[name=recordEditBeginTime]').appendDtpicker();
 					});
 				</script>
-				<span id="recordEditBeginTimeHide" class="glyphicon glyphicon-off"
-					aria-hidden="true"></span>
+				<button type="button" class="btn btn-default">
+					<span id="recordEditBeginTimeHide" class="glyphicon glyphicon-off"
+          aria-hidden="true"></span>
+				</button>
 				<script>
 					$(function() {
 						$('#recordEditBeginTimeHide').click(function() {
@@ -147,8 +150,11 @@
 						});
 					});
 				</script>
-				<span id="recordEditBeginTimeCurrent"
-					class="glyphicon glyphicon-time" aria-hidden="true"></span>
+				<button type="button" class="btn btn-default">
+          <span id="recordEditBeginTimeCurrent" class="glyphicon glyphicon-time"
+          aria-hidden="true"></span>
+        </button>
+				
 				<script>
 					$(function() {
 						$('#recordEditBeginTimeCurrent')
@@ -167,16 +173,19 @@
 					document.write(globalization_end_time);
 				</script>
 				<input type="text" name="recordEditEndTime" id="recordEditEndTime"
-					value="" size="14"> <input type="hidden"
-					class="form-control" name="metadataRecordEndTimeClientId"
+					value="" size="14"
+					onblur="javascript:$('#recordEditEndTime').handleDtpicker('hide');">
+				<input type="hidden" class="form-control"
+					name="metadataRecordEndTimeClientId"
 					id="metadataRecordEndTimeClientId">
 				<script type="text/javascript">
 					$(function() {
 						$('*[name=recordEditEndTime]').appendDtpicker();
 					});
 				</script>
+				<button type="button" class="btn btn-default">
 				<span id="recordEditEndTimeHide" class="glyphicon glyphicon-off"
-					aria-hidden="true"></span>
+					aria-hidden="true"></span></button>
 				<script>
 					$(function() {
 						$('#recordEditEndTimeHide').click(function() {
@@ -184,8 +193,9 @@
 						});
 					});
 				</script>
+				<button type="button" class="btn btn-default">
 				<span id="recordEditEndTimeCurrent" class="glyphicon glyphicon-time"
-					aria-hidden="true"></span>
+					aria-hidden="true"></span></button>
 				<script>
 					$(function() {
 						$('#recordEditEndTimeCurrent')
