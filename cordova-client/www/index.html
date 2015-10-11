@@ -15,8 +15,6 @@
 <title>Login</title>
 <link rel="stylesheet" media="screen" href="css/bootstrap.min.css">
 <link rel="stylesheet" media="screen"
-	href="css/bootstrap-datetimepicker.min.css">
-<link rel="stylesheet" media="screen"
 	href="css/jquery.dataTables-1.10.7.css">
 <link type="text/css" href="css/jquery.simple-dtpicker.css"
 	rel="stylesheet" />
@@ -29,7 +27,6 @@
 <script src="js/bootstrap-3.3.4.min.js"></script>
 <script src="js/jquery.dataTables-1.10.7.min.js"></script>
 <script src="js/jquery.validate.min.js"></script>
-<script src="js/bootstrap-datetimepicker.min.js"></script>
 <script src="js/jquery.simple-dtpicker.js"></script>
 <script src="js/BigInteger.min.js"></script>
 <script src="js/record-inc-functions.js"></script>
@@ -119,29 +116,32 @@
 				document.write(globalization_catalog + ":");
 			</script>
 			<select id="selectCatalog"></select> <input type="text"
-				id="recordEditDetail" class="form-control" name="recordEditDetail"
-				autofocus><input type="hidden"
-				id="metadataRecordContentClientId" class="form-control"
-				name="metadataRecordContentClientId"><input type="hidden"
-				class="form-control" name="recordEditId" id="recordEditId">
+				id="recordEditDetail" class="form-control" name="recordEditDetail"><input
+				type="hidden" id="metadataRecordContentClientId"
+				class="form-control" name="metadataRecordContentClientId"><input
+				type="hidden" class="form-control" name="recordEditId"
+				id="recordEditId">
 			<div id="recordEditBeginTimePicker">
 				<script>
 					document.write(globalization_begin_time);
 				</script>
 				<input type="text" name="recordEditBeginTime"
 					id="recordEditBeginTime" value="" size="14"
-					onblur="javascript:$('#recordEditBeginTime').handleDtpicker('hide');">
+					onblur='javascript:setTimeout("closeBeginTimePicker()",250);'>
 				<input type="hidden" class="form-control"
 					name="metadataRecordBeginTimeClientId"
 					id="metadataRecordBeginTimeClientId">
 				<script type="text/javascript">
+					function closeBeginTimePicker() {
+						$("#recordEditBeginTime").handleDtpicker('hide');
+					}
 					$(function() {
 						$('*[name=recordEditBeginTime]').appendDtpicker();
 					});
 				</script>
 				<button type="button" class="btn btn-default">
 					<span id="recordEditBeginTimeHide" class="glyphicon glyphicon-off"
-          aria-hidden="true"></span>
+						aria-hidden="true"></span>
 				</button>
 				<script>
 					$(function() {
@@ -151,10 +151,9 @@
 					});
 				</script>
 				<button type="button" class="btn btn-default">
-          <span id="recordEditBeginTimeCurrent" class="glyphicon glyphicon-time"
-          aria-hidden="true"></span>
-        </button>
-				
+					<span id="recordEditBeginTimeCurrent"
+						class="glyphicon glyphicon-time" aria-hidden="true"></span>
+				</button>
 				<script>
 					$(function() {
 						$('#recordEditBeginTimeCurrent')
@@ -174,18 +173,22 @@
 				</script>
 				<input type="text" name="recordEditEndTime" id="recordEditEndTime"
 					value="" size="14"
-					onblur="javascript:$('#recordEditEndTime').handleDtpicker('hide');">
+					onblur='javascript:setTimeout("closeEndTimePicker()",250);'>
 				<input type="hidden" class="form-control"
 					name="metadataRecordEndTimeClientId"
 					id="metadataRecordEndTimeClientId">
 				<script type="text/javascript">
+					function closeEndTimePicker() {
+						$("#recordEditEndTime").handleDtpicker('hide');
+					}
 					$(function() {
 						$('*[name=recordEditEndTime]').appendDtpicker();
 					});
 				</script>
 				<button type="button" class="btn btn-default">
-				<span id="recordEditEndTimeHide" class="glyphicon glyphicon-off"
-					aria-hidden="true"></span></button>
+					<span id="recordEditEndTimeHide" class="glyphicon glyphicon-off"
+						aria-hidden="true"></span>
+				</button>
 				<script>
 					$(function() {
 						$('#recordEditEndTimeHide').click(function() {
@@ -194,8 +197,9 @@
 					});
 				</script>
 				<button type="button" class="btn btn-default">
-				<span id="recordEditEndTimeCurrent" class="glyphicon glyphicon-time"
-					aria-hidden="true"></span></button>
+					<span id="recordEditEndTimeCurrent"
+						class="glyphicon glyphicon-time" aria-hidden="true"></span>
+				</button>
 				<script>
 					$(function() {
 						$('#recordEditEndTimeCurrent')
