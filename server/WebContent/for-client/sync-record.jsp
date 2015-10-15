@@ -30,7 +30,11 @@
       JsonElement tableNameJelement = new JsonParser().parse(info);
       JsonObject tableName = tableNameJelement.getAsJsonObject();
       //tableName = tableName.getAsJsonObject("tableName");
-      System.out.println(tableName.get("tableName"));
+      if (tableName.get("tableName").toString().equals("\"local_contents\"")){
+        System.out.println(tableName.get("tableName"));  
+      }else if  (tableName.get("tableName").toString().equals("\"local_relations\"")){
+        
+      }
       //ReceivedControl receivedControl = gson.fromJson(info, classOfT);
       
       /*

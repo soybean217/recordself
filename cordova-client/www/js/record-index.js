@@ -479,8 +479,7 @@ function txRefreshTitleListView(tx, results) {
 	mTitleTable.rows.add(mTitleDataSet);
 	mTitleTable.draw();
 
-	// var syncThread = new syncServer();
-	// var syncThread = new syncRecordServer();
+	var syncThread = new syncServer();
 }
 function convertDateStringToLong(inputString) {
 	if (isNaN((new Date(inputString)).valueOf())) {
