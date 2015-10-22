@@ -117,7 +117,7 @@ function setupRecordListFromDb() {
 		}, {
 			"title" : globalization_detail
 		}, {
-			"title" : globalization_begin_time
+			"title" : globalization_last_update
 		}, {
 			"title" : globalization_end_time
 		} ],
@@ -400,7 +400,7 @@ function dbQueryRecord(catalogId) {
 									+ " WHERE idFrom = (select serverId from local_contents where clientId=?) )) "
 									+ " AND c.contentType='MetadataRecordContent'"
 									+ "  ) "
-									+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.clientId DESC"
+									+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.lastLocalTime DESC"
 									+ " limit 0,?;", [
 									mLocalParameters['userId'], catalogId,
 									catalogId, mRecordLimit ],
@@ -416,7 +416,7 @@ function dbQueryRecord(catalogId) {
 									+ " WHERE r.idFrom IN (SELECT clientId FROM local_contents "
 									+ " WHERE state<>-1 and contentType='SchemaRecord' and userId= ? ) "
 									+ " AND r.idTo = c.clientId AND c.contentType='MetadataRecordContent' "
-									+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.clientId DESC"
+									+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.lastLocalTime DESC"
 									+ " limit 0,?;", [
 									mLocalParameters['userId'], mRecordLimit ],
 							refreshRecordListView, errorCB);
@@ -479,7 +479,7 @@ function txRefreshTitleListView(tx, results) {
 	mTitleTable.rows.add(mTitleDataSet);
 	mTitleTable.draw();
 
-	var syncThread = new syncServer();
+//	var syncThread = new syncServer();
 }
 function convertDateStringToLong(inputString) {
 	if (isNaN((new Date(inputString)).valueOf())) {
@@ -852,6 +852,9 @@ function dbUpdateConentLastLocalTimeByClientId(contentClientId) {
 function dbUpdateSingleRecord(editRecord, updateArray) {
 	return function(tx) {
 		updateArray.forEach(procMetadataForUpdateRecord(editRecord));
+		db.transaction(
+				dbUpdateConentLastLocalTimeByClientId(editRecord.clientId),
+				errorCB);
 		db
 				.transaction(
 						dbUpdateConentLastLocalTimeByClientId(editRecord.catalogClientId),
