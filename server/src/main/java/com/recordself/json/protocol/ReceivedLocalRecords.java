@@ -2,18 +2,18 @@ package com.recordself.json.protocol;
 
 import java.util.List;
 
-import com.recordself.entity.Record;
+import com.recordself.entity.Content;
 
 
 public class ReceivedLocalRecords {
-  private List<Record> dataRows;
+  private List<Content> dataRows;
   private Long lastSyncServerTimeFromClient;
 
-  public List<Record> getDataRows() {
+  public List<Content> getDataRows() {
     return dataRows;
   }
 
-  public void setDataRows(List<Record> dataRows) {
+  public void setDataRows(List<Content> dataRows) {
     this.dataRows = dataRows;
   }
 
@@ -23,6 +23,12 @@ public class ReceivedLocalRecords {
 
   public void setLastSyncServerTimeFromClient(Long lastSyncServerTimeFromClient) {
     this.lastSyncServerTimeFromClient = lastSyncServerTimeFromClient;
+  }
+
+  @Override
+  public String toString() {
+    return "ReceivedLocalRecords [dataRows=" + dataRows + ", lastSyncServerTimeFromClient="
+        + lastSyncServerTimeFromClient + "]";
   }
 
 }

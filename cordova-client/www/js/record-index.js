@@ -444,7 +444,7 @@ function refreshRecordListView(tx, results) {
 	mRecordTable.rows.add(mRecordDataSet);
 	mRecordTable.draw();
 
-	// var syncThread = new syncServer();
+//	var syncThread = new syncServer();
 }
 function dbQueryCatalog(tx) {
 	tx
@@ -479,7 +479,7 @@ function txRefreshTitleListView(tx, results) {
 	mTitleTable.rows.add(mTitleDataSet);
 	mTitleTable.draw();
 
-//	var syncThread = new syncServer();
+	var syncThread = new syncServer();
 }
 function convertDateStringToLong(inputString) {
 	if (isNaN((new Date(inputString)).valueOf())) {

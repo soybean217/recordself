@@ -81,9 +81,12 @@ function withInputDbGetNeedSyncRecords(lastServerTime, tableName) {
 
 function withInputHandlerSyncDataToServer(lastServerTime, tableName) {
 	return function(tx, results) {
-		var syncData = {
+		var data = {
 			dataRows : [],
 			lastSyncServerTimeFromClient : lastServerTime,
+		}
+		var syncData = {
+			data : data,
 			clientParameters : mLocalParameters,
 			tableName : tableName
 		};
@@ -107,7 +110,7 @@ function withInputHandlerSyncDataToServer(lastServerTime, tableName) {
 				row.serverUpdateTime = results.rows.item(i).serverUpdateTime;
 				break;
 			}
-			syncData.dataRows.push(row);
+			data.dataRows.push(row);
 		}
 		syncRecordAjax(mServerUrl, receiveSyncRecordRspAjax,
 				ajaxGetNotSuccessMsg, ajaxNetworkError, syncData, tableName);

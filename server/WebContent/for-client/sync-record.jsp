@@ -1,5 +1,5 @@
 <%@page import="com.recordself.json.protocol.BaseRsp"%>
-<%@page import="com.recordself.service.RecordService"%>
+<%@page import="com.recordself.service.ContentService"%>
 <%@page import="com.recordself.json.protocol.ReceivedLocalRecords"%>
 <%@page import="com.recordself.service.UserService"%>
 <%@page import="com.google.gson.JsonObject"%>
@@ -16,38 +16,37 @@
 <%@ include file="inc-receive-body.jsp"%>
 <%
   try {
-    //JSONObject receiveJson = new JSONObject(info);
     JsonElement jelement = new JsonParser().parse(info);
-    JsonObject jsonClientParameters = jelement.getAsJsonObject();
-    jsonClientParameters = jsonClientParameters.getAsJsonObject("clientParameters");
+    JsonObject jsonAll = jelement.getAsJsonObject();
+    JsonObject jsonClientParameters = jsonAll.getAsJsonObject("clientParameters");
     Gson gson = new Gson();
-    //JsonElement jsonElement = receiveJson.get("clientParameters");
     User user = gson.fromJson(jsonClientParameters, User.class);
     LOG.info(user);
     UserService userService = new UserService();
     if (userService.checkUserCurrent(user)) {
-      
-      JsonElement tableNameJelement = new JsonParser().parse(info);
-      JsonObject tableName = tableNameJelement.getAsJsonObject();
-      //tableName = tableName.getAsJsonObject("tableName");
-      if (tableName.get("tableName").toString().equals("\"local_contents\"")){
-        System.out.println(tableName.get("tableName"));  
-      }else if  (tableName.get("tableName").toString().equals("\"local_relations\"")){
+      if (jsonAll.get("tableName").toString().equals("\"local_contents\"")){
+        JsonObject jsonData;
+        jsonData = jsonAll.getAsJsonObject("data");
+        ReceivedLocalRecords receivedLocalRecords = gson.fromJson(jsonData, ReceivedLocalRecords.class);
+        LOG.info(receivedLocalRecords);
+        ContentService contentService = new ContentService();
+        contentService.setReceivedLocalRecords(receivedLocalRecords);
+        contentService.setUser(user);
+        BaseRsp baseRsp = new BaseRsp();
+        baseRsp.setStatus("success");
+        baseRsp.setData(contentService.procReceive());
+        String rsp = gson.toJson(baseRsp);
+        out.println(rsp);
+        LOG.debug(rsp); 
+      }else if  (jsonAll.get("tableName").toString().equals("\"local_relations\"")){
         
       }
       //ReceivedControl receivedControl = gson.fromJson(info, classOfT);
       
+      
+      
       /*
-      ReceivedLocalRecords receivedLocalRecords = gson.fromJson(info, ReceivedLocalRecords.class);
-      RecordService recordService = new RecordService();
-      recordService.setReceivedLocalRecords(receivedLocalRecords);
-      recordService.setUser(user);
-      BaseRsp baseRsp = new BaseRsp();
-      baseRsp.setStatus("success");
-      baseRsp.setData(recordService.procReceive());
-      String rsp = gson.toJson(baseRsp);
-      out.println(rsp);
-      LOG.debug(rsp); 
+      
       */
     } else {
       String msg = "check user failure!";
