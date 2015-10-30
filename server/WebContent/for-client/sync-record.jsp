@@ -43,8 +43,6 @@
       }
       //ReceivedControl receivedControl = gson.fromJson(info, classOfT);
       
-      
-      
       /*
       
       */

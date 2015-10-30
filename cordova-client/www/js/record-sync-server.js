@@ -65,7 +65,7 @@ function withInputDbGetNeedSyncRecords(lastServerTime, tableName) {
 		case "local_contents":
 			tx
 					.executeSql(
-							"Select serverId,content,state,"
+							"Select serverId,content,contentType,state,"
 									+ " serverUpdateTime "
 									+ " from local_contents where userId=? "
 									+ "and serverId>0 and modifyStatus = 1 order by clientId limit ? ;",
@@ -74,8 +74,19 @@ function withInputDbGetNeedSyncRecords(lastServerTime, tableName) {
 							withInputHandlerSyncDataToServer(lastServerTime,
 									tableName), errorCB);
 			break;
+		case "local_relations":
+			tx
+			.executeSql(
+					"Select serverId,idFrom,idTo,state,"
+					+ " serverUpdateTime "
+					+ " from local_contents where userId=? "
+					+ "and serverId>0 and modifyStatus = 1 order by clientId limit ? ;",
+					[ mLocalParameters['userId'],
+					  LIMIT_UPDATE_BATCH_SIZE ],
+					  withInputHandlerSyncDataToServer(lastServerTime,
+							  tableName), errorCB);
+			break;
 		}
-
 	}
 }
 
@@ -106,6 +117,14 @@ function withInputHandlerSyncDataToServer(lastServerTime, tableName) {
 			case "local_contents":
 				row.serverId = results.rows.item(i).serverId;
 				row.content = results.rows.item(i).content;
+				row.contentType = results.rows.item(i).contentType;
+				row.state = results.rows.item(i).state;
+				row.serverUpdateTime = results.rows.item(i).serverUpdateTime;
+				break;
+			case "local_relations":
+				row.serverId = results.rows.item(i).serverId;
+				row.idFrom = results.rows.item(i).idFrom;
+				row.idTo = results.rows.item(i).idTo;
 				row.state = results.rows.item(i).state;
 				row.serverUpdateTime = results.rows.item(i).serverUpdateTime;
 				break;
