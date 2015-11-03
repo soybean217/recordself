@@ -5,7 +5,7 @@ import java.util.List;
 import com.recordself.entity.Content;
 
 
-public class ReceivedLocalRecords {
+public class ReceivedLocalContents {
   private List<Content> dataRows;
   private Long lastSyncServerTimeFromClient;
 

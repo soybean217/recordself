@@ -9,21 +9,18 @@ import java.util.Map;
 
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
-import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.log4j.Logger;
 import org.common.util.Base;
-import org.common.util.ConfigManager;
 import org.common.util.ConnectionService;
-import org.common.util.GenerateIdService;
 
 import com.recordself.entity.Content;
 import com.recordself.entity.User;
-import com.recordself.json.protocol.ReceivedLocalRecords;
+import com.recordself.json.protocol.ReceivedLocalContents;
 
 public class ContentService {
 
   private final static Logger LOG = Logger.getLogger("RecordService.class");
-  private ReceivedLocalRecords receivedLocalRecords;
+  private ReceivedLocalContents receivedLocalContents;
   private User user;
   public final long mCurrent = System.currentTimeMillis();
   private Map<String, Content> mReceivedMap = new HashMap<String, Content>();
@@ -44,7 +41,7 @@ public class ContentService {
     Map<String, Content> sendClientUpdateRecords = new HashMap<String, Content>();
     List<Content> receiveWithServerIdList = new ArrayList<Content>();
     queryRecordToClient(sendClientUpdateRecords);
-    for (Content record : receivedLocalRecords.getDataRows()) {
+    for (Content record : receivedLocalContents.getDataRows()) {
       if (!(record.getServerId() != null && record.getServerId().length() > 5)) {
         LOG.error("no server id . user id :" + user.getUserId());
       } else {
@@ -154,7 +151,7 @@ public class ContentService {
       String sql = "select " + QUERY_COLUMN + " from server_contents where userId=? and  serverUpdateTime >?";
       QueryRunner queryRunner = new QueryRunner(true);
       List<Content> results = (List) queryRunner.query(con, sql, new BeanListHandler(Content.class), user.getUserId(),
-          receivedLocalRecords.getLastSyncServerTimeFromClient());
+          receivedLocalContents.getLastSyncServerTimeFromClient());
       for (Content cell : results) {
         sendClientUpdateRecords.put(cell.getServerId(), cell);
       }
@@ -227,12 +224,12 @@ public class ContentService {
     }
   }
 
-  public ReceivedLocalRecords getReceivedLocalRecords() {
-    return receivedLocalRecords;
+  public ReceivedLocalContents getReceivedLocalRecords() {
+    return receivedLocalContents;
   }
 
-  public void setReceivedLocalRecords(ReceivedLocalRecords receivedLocalRecords) {
-    this.receivedLocalRecords = receivedLocalRecords;
+  public void setReceivedLocalRecords(ReceivedLocalContents receivedLocalContents) {
+    this.receivedLocalContents = receivedLocalContents;
   }
 
 }

@@ -1,6 +1,6 @@
 <%@page import="com.recordself.json.protocol.BaseRsp"%>
 <%@page import="com.recordself.service.ContentService"%>
-<%@page import="com.recordself.json.protocol.ReceivedLocalRecords"%>
+<%@page import="com.recordself.json.protocol.ReceivedLocalContents"%>
 <%@page import="com.recordself.service.UserService"%>
 <%@page import="com.google.gson.JsonObject"%>
 <%@page import="com.google.gson.JsonParser"%>
@@ -27,10 +27,10 @@
       if (jsonAll.get("tableName").toString().equals("\"local_contents\"")){
         JsonObject jsonData;
         jsonData = jsonAll.getAsJsonObject("data");
-        ReceivedLocalRecords receivedLocalRecords = gson.fromJson(jsonData, ReceivedLocalRecords.class);
-        LOG.info(receivedLocalRecords);
+        ReceivedLocalContents receivedLocalContents = gson.fromJson(jsonData, ReceivedLocalContents.class);
+        LOG.info(receivedLocalContents);
         ContentService contentService = new ContentService();
-        contentService.setReceivedLocalRecords(receivedLocalRecords);
+        contentService.setReceivedLocalRecords(receivedLocalContents);
         contentService.setUser(user);
         BaseRsp baseRsp = new BaseRsp();
         baseRsp.setStatus("success");
