@@ -24,7 +24,7 @@ public class ContentService {
   private User user;
   public final long mCurrent = System.currentTimeMillis();
   private Map<String, Content> mReceivedMap = new HashMap<String, Content>();
-  private static final String QUERY_COLUMN = " serverId,serverUpdateTime,content,contentType,state ";
+  private static final String SQL_COLUMN = " serverId,serverUpdateTime,content,contentType,state ";
 
   public User getUser() {
     return user;
@@ -68,7 +68,7 @@ public class ContentService {
       // perhaps thread issue , think about lock
       for (Content record : receiveWithServerIdList) {
         if (Base.isNumeric(record.getServerId()) && Long.parseLong(record.getServerId()) > 0) {
-          sql.append("union all SELECT " + QUERY_COLUMN + " FROM server_contents where serverId = "
+          sql.append("union all SELECT " + SQL_COLUMN + " FROM server_contents where serverId = "
               + record.getServerId() + " ");
         } else {
           LOG.error(record.getServerId() + ":not correct . user id :" + user.getUserId());
@@ -147,7 +147,7 @@ public class ContentService {
     try {
       con = ConnectionService.getInstance().getConnectionForLocal();
       // sync all is not good idea , just demo
-      String sql = "select " + QUERY_COLUMN + " from server_contents where userId=? and  serverUpdateTime >?";
+      String sql = "select " + SQL_COLUMN + " from server_contents where userId=? and  serverUpdateTime >?";
       QueryRunner queryRunner = new QueryRunner(true);
       List<Content> results = (List) queryRunner.query(con, sql, new BeanListHandler(Content.class), user.getUserId(),
           receivedLocalContents.getLastSyncServerTimeFromClient());
@@ -199,15 +199,15 @@ public class ContentService {
       Object[][] insertAll = new Object[mReceivedMap.size()][];
       int i = 0;
       for (Content cell : mReceivedMap.values()) {
-        Object[] currentForSql = new Object[] { cell.getServerId(), user.getUserId(), cell.getContent(),
-            cell.getContentType(), cell.getState(), mCurrent };
+        Object[] currentForSql = new Object[] { cell.getServerId(),mCurrent , cell.getContent(),
+            cell.getContentType(), cell.getState(), user.getUserId() };
         insertAll[i] = currentForSql;
         i++;
         cell.setServerUpdateTime(mCurrent);
         sendClientUpdateRecords.put(cell.getServerId(), cell);
       }
-      queryRunner.batch(con, "insert into server_contents (serverId,userId,content,contentType,state,"
-          + "serverUpdateTime) values (?,?,?,?,?,?)", insertAll);
+      queryRunner.batch(con, "insert into server_contents ("+SQL_COLUMN
+          + ",userId) values (?,?,?,?,?,?)", insertAll);
     } catch (Exception e) {
       // TODO Auto-generated catch block
       e.printStackTrace();

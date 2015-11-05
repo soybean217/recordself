@@ -1,5 +1,6 @@
 <%@page import="com.recordself.json.protocol.BaseRsp"%>
 <%@page import="com.recordself.service.ContentService"%>
+<%@page import="com.recordself.service.RelationService"%>
 <%@page import="com.recordself.json.protocol.ReceivedLocalContents"%>
 <%@page import="com.recordself.json.protocol.ReceivedLocalRelations"%>
 <%@page import="com.recordself.service.UserService"%>
@@ -42,12 +43,16 @@
       }else if  (jsonAll.get("tableName").toString().equals("\"local_relations\"")){
         ReceivedLocalRelations receivedLocalRelations = gson.fromJson(jsonData, ReceivedLocalRelations.class);
         LOG.info(receivedLocalRelations);
+        RelationService relationService = new RelationService();
+        relationService.setReceivedLocalRecords(receivedLocalRelations);
+        relationService.setUser(user);
+        BaseRsp baseRsp = new BaseRsp();
+        baseRsp.setStatus("success");
+        baseRsp.setData(relationService.procReceive());
+        String rsp = gson.toJson(baseRsp);
+        out.println(rsp);
+        LOG.debug(rsp); 
       }
-      //ReceivedControl receivedControl = gson.fromJson(info, classOfT);
-      
-      /*
-      
-      */
     } else {
       String msg = "check user failure!";
       LOG.info(msg);

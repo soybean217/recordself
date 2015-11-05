@@ -24,7 +24,7 @@ public class RelationService {
   private User user;
   public final long mCurrent = System.currentTimeMillis();
   private Map<String, Relation> mReceivedMap = new HashMap<String, Relation>();
-  private static final String QUERY_COLUMN = " serverId,serverUpdateTime,idFrom,idTo,state ";
+  private static final String SQL_COLUMN = " serverId,serverUpdateTime,idFrom,idTo,state ";
 
   public User getUser() {
     return user;
@@ -68,7 +68,7 @@ public class RelationService {
       // perhaps thread issue , think about lock
       for (Relation record : receiveWithServerIdList) {
         if (Base.isNumeric(record.getServerId()) && Long.parseLong(record.getServerId()) > 0) {
-          sql.append("union all SELECT " + QUERY_COLUMN + " FROM server_contents where serverId = "
+          sql.append("union all SELECT " + SQL_COLUMN + " FROM server_relations where serverId = "
               + record.getServerId() + " ");
         } else {
           LOG.error(record.getServerId() + ":not correct . user id :" + user.getUserId());
@@ -125,7 +125,7 @@ public class RelationService {
       queryRunner
           .batch(
               con,
-              " update server_contents set Relation=?,contentType=?,state=?,serverUpdateTime=? where serverId=? ;",
+              " update server_relations set Relation=?,contentType=?,state=?,serverUpdateTime=? where serverId=? ;",
               updateAll);
     } catch (Exception e) {
       // TODO Auto-generated catch block
@@ -147,7 +147,7 @@ public class RelationService {
     try {
       con = ConnectionService.getInstance().getConnectionForLocal();
       // sync all is not good idea , just demo
-      String sql = "select " + QUERY_COLUMN + " from server_contents where userId=? and  serverUpdateTime >?";
+      String sql = "select " + SQL_COLUMN + " from server_relations where userId=? and  serverUpdateTime >?";
       QueryRunner queryRunner = new QueryRunner(true);
       List<Relation> results = (List) queryRunner.query(con, sql, new BeanListHandler(Relation.class), user.getUserId(),
           receivedLocalRelations.getLastSyncServerTimeFromClient());
@@ -199,16 +199,15 @@ public class RelationService {
       Object[][] insertAll = new Object[mReceivedMap.size()][];
       int i = 0;
       for (Relation cell : mReceivedMap.values()) {
-        Object[] currentForSql = new Object[] { cell.getServerId(), user.getUserId(), cell.getIdFrom(),
-            cell.getIdTo(), cell.getState(), mCurrent };
+        Object[] currentForSql = new Object[] { cell.getServerId(),mCurrent , cell.getIdFrom(),
+            cell.getIdTo(), cell.getState(), user.getUserId() };
         insertAll[i] = currentForSql;
         i++;
         cell.setServerUpdateTime(mCurrent);
         sendClientUpdateRecords.put(cell.getServerId(), cell);
       }
-      1
-      queryRunner.batch(con, "insert into server_contents (serverId,userId,Relation,contentType,state,"
-          + "serverUpdateTime) values (?,?,?,?,?,?)", insertAll);
+      queryRunner.batch(con, "insert into server_relations ("+SQL_COLUMN
+          + ",userId) values (?,?,?,?,?,?)", insertAll);
     } catch (Exception e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
