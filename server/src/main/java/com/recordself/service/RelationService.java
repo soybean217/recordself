@@ -13,18 +13,18 @@ import org.apache.log4j.Logger;
 import org.common.util.Base;
 import org.common.util.ConnectionService;
 
-import com.recordself.entity.Content;
+import com.recordself.entity.Relation;
 import com.recordself.entity.User;
-import com.recordself.json.protocol.ReceivedLocalContents;
+import com.recordself.json.protocol.ReceivedLocalRelations;
 
-public class ContentService {
+public class RelationService {
 
-  private final static Logger LOG = Logger.getLogger("RecordService.class");
-  private ReceivedLocalContents receivedLocalContents;
+  private final static Logger LOG = Logger.getLogger("RelationService.class");
+  private ReceivedLocalRelations receivedLocalRelations;
   private User user;
   public final long mCurrent = System.currentTimeMillis();
-  private Map<String, Content> mReceivedMap = new HashMap<String, Content>();
-  private static final String QUERY_COLUMN = " serverId,serverUpdateTime,content,contentType,state ";
+  private Map<String, Relation> mReceivedMap = new HashMap<String, Relation>();
+  private static final String QUERY_COLUMN = " serverId,serverUpdateTime,idFrom,idTo,state ";
 
   public User getUser() {
     return user;
@@ -34,13 +34,13 @@ public class ContentService {
     this.user = user;
   }
 
-  public List<Content> procReceive() {
-    List<Content> result = new ArrayList<Content>();
+  public List<Relation> procReceive() {
+    List<Relation> result = new ArrayList<Relation>();
 
-    Map<String, Content> sendClientUpdateRecords = new HashMap<String, Content>();
-    List<Content> receiveWithServerIdList = new ArrayList<Content>();
+    Map<String, Relation> sendClientUpdateRecords = new HashMap<String, Relation>();
+    List<Relation> receiveWithServerIdList = new ArrayList<Relation>();
     queryRecordToClient(sendClientUpdateRecords);
-    for (Content record : receivedLocalContents.getDataRows()) {
+    for (Relation record : receivedLocalRelations.getDataRows()) {
       if (!(record.getServerId() != null && record.getServerId().length() > 5)) {
         LOG.error("no server id . user id :" + user.getUserId());
       } else {
@@ -58,15 +58,15 @@ public class ContentService {
     return result;
   }
 
-  private List<Content> getRecordsDbMatchClient(List<Content> receiveWithServerIdList) {
-    List<Content> results = null;
+  private List<Relation> getRecordsDbMatchClient(List<Relation> receiveWithServerIdList) {
+    List<Relation> results = null;
     Connection con = null;
     try {
       con = ConnectionService.getInstance().getConnectionForLocal();
       QueryRunner queryRunner = new QueryRunner(true);
       StringBuilder sql = new StringBuilder();
       // perhaps thread issue , think about lock
-      for (Content record : receiveWithServerIdList) {
+      for (Relation record : receiveWithServerIdList) {
         if (Base.isNumeric(record.getServerId()) && Long.parseLong(record.getServerId()) > 0) {
           sql.append("union all SELECT " + QUERY_COLUMN + " FROM server_contents where serverId = "
               + record.getServerId() + " ");
@@ -75,7 +75,7 @@ public class ContentService {
         }
       }
       sql.delete(0, 9);
-      results = (List) queryRunner.query(con, sql.toString(), new BeanListHandler(Content.class));
+      results = (List) queryRunner.query(con, sql.toString(), new BeanListHandler(Relation.class));
     } catch (Exception e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -92,8 +92,8 @@ public class ContentService {
     return results;
   }
 
-  private void procReceiveToDb(List<Content> receiveWithServerIdList, Map<String, Content> sendClientUpdateRecords) {
-    List<Content> matchedFromDb = getRecordsDbMatchClient(receiveWithServerIdList);
+  private void procReceiveToDb(List<Relation> receiveWithServerIdList, Map<String, Relation> sendClientUpdateRecords) {
+    List<Relation> matchedFromDb = getRecordsDbMatchClient(receiveWithServerIdList);
 
     // List<Long> results = (List<Long>) queryRunner.query(con, sql.toString(),
     // new ColumnListHandler());
@@ -125,7 +125,7 @@ public class ContentService {
       queryRunner
           .batch(
               con,
-              " update server_contents set content=?,contentType=?,state=?,serverUpdateTime=? where serverId=? ;",
+              " update server_contents set Relation=?,contentType=?,state=?,serverUpdateTime=? where serverId=? ;",
               updateAll);
     } catch (Exception e) {
       // TODO Auto-generated catch block
@@ -142,16 +142,16 @@ public class ContentService {
     }
   }
 
-  private void queryRecordToClient(Map<String, Content> sendClientUpdateRecords) {
+  private void queryRecordToClient(Map<String, Relation> sendClientUpdateRecords) {
     Connection con = null;
     try {
       con = ConnectionService.getInstance().getConnectionForLocal();
       // sync all is not good idea , just demo
       String sql = "select " + QUERY_COLUMN + " from server_contents where userId=? and  serverUpdateTime >?";
       QueryRunner queryRunner = new QueryRunner(true);
-      List<Content> results = (List) queryRunner.query(con, sql, new BeanListHandler(Content.class), user.getUserId(),
-          receivedLocalContents.getLastSyncServerTimeFromClient());
-      for (Content cell : results) {
+      List<Relation> results = (List) queryRunner.query(con, sql, new BeanListHandler(Relation.class), user.getUserId(),
+          receivedLocalRelations.getLastSyncServerTimeFromClient());
+      for (Relation cell : results) {
         sendClientUpdateRecords.put(cell.getServerId(), cell);
       }
     } catch (Exception e) {
@@ -169,13 +169,13 @@ public class ContentService {
     }
   }
 
-  private void identifyRecords(List<Content> matchedFromDb, List<Object[]> updateArray, List<Object[]> insertArray,
-      Map<String, Content> sendClientUpdateRecords) {
-    for (Content cell : matchedFromDb) {
+  private void identifyRecords(List<Relation> matchedFromDb, List<Object[]> updateArray, List<Object[]> insertArray,
+      Map<String, Relation> sendClientUpdateRecords) {
+    for (Relation cell : matchedFromDb) {
       if (mReceivedMap.containsKey(cell.getServerId())) {
         if (mReceivedMap.get(cell.getServerId()).getServerUpdateTime().equals(cell.getServerUpdateTime())) {
-          Object[] currentSql = new Object[] { mReceivedMap.get(cell.getServerId()).getContent(),
-              mReceivedMap.get(cell.getServerId()).getContentType(),  mReceivedMap.get(cell.getServerId()).getState(),
+          Object[] currentSql = new Object[] { mReceivedMap.get(cell.getServerId()).getIdFrom(),
+              mReceivedMap.get(cell.getServerId()).getIdTo(),  mReceivedMap.get(cell.getServerId()).getState(),
               mCurrent,  cell.getServerId() };
           updateArray.add(currentSql);
           mReceivedMap.get(cell.getServerId()).setServerUpdateTime(mCurrent);
@@ -191,22 +191,23 @@ public class ContentService {
     }
   }
 
-  private void batchInsertNewRecords(Map<String, Content> sendClientUpdateRecords) {
+  private void batchInsertNewRecords(Map<String, Relation> sendClientUpdateRecords) {
     Connection con = null;
     try {
       con = ConnectionService.getInstance().getConnectionForLocal();
       QueryRunner queryRunner = new QueryRunner(true);
       Object[][] insertAll = new Object[mReceivedMap.size()][];
       int i = 0;
-      for (Content cell : mReceivedMap.values()) {
-        Object[] currentForSql = new Object[] { cell.getServerId(), user.getUserId(), cell.getContent(),
-            cell.getContentType(), cell.getState(), mCurrent };
+      for (Relation cell : mReceivedMap.values()) {
+        Object[] currentForSql = new Object[] { cell.getServerId(), user.getUserId(), cell.getIdFrom(),
+            cell.getIdTo(), cell.getState(), mCurrent };
         insertAll[i] = currentForSql;
         i++;
         cell.setServerUpdateTime(mCurrent);
         sendClientUpdateRecords.put(cell.getServerId(), cell);
       }
-      queryRunner.batch(con, "insert into server_contents (serverId,userId,content,contentType,state,"
+      1
+      queryRunner.batch(con, "insert into server_contents (serverId,userId,Relation,contentType,state,"
           + "serverUpdateTime) values (?,?,?,?,?,?)", insertAll);
     } catch (Exception e) {
       // TODO Auto-generated catch block
@@ -223,12 +224,12 @@ public class ContentService {
     }
   }
 
-  public ReceivedLocalContents getReceivedLocalRecords() {
-    return receivedLocalContents;
+  public ReceivedLocalRelations getReceivedLocalRecords() {
+    return receivedLocalRelations;
   }
 
-  public void setReceivedLocalRecords(ReceivedLocalContents receivedLocalContents) {
-    this.receivedLocalContents = receivedLocalContents;
+  public void setReceivedLocalRecords(ReceivedLocalRelations receivedLocalRelations) {
+    this.receivedLocalRelations = receivedLocalRelations;
   }
 
 }

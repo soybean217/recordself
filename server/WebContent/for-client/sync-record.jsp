@@ -1,6 +1,7 @@
 <%@page import="com.recordself.json.protocol.BaseRsp"%>
 <%@page import="com.recordself.service.ContentService"%>
 <%@page import="com.recordself.json.protocol.ReceivedLocalContents"%>
+<%@page import="com.recordself.json.protocol.ReceivedLocalRelations"%>
 <%@page import="com.recordself.service.UserService"%>
 <%@page import="com.google.gson.JsonObject"%>
 <%@page import="com.google.gson.JsonParser"%>
@@ -24,9 +25,9 @@
     LOG.info(user);
     UserService userService = new UserService();
     if (userService.checkUserCurrent(user)) {
+      JsonObject jsonData;
+      jsonData = jsonAll.getAsJsonObject("data");
       if (jsonAll.get("tableName").toString().equals("\"local_contents\"")){
-        JsonObject jsonData;
-        jsonData = jsonAll.getAsJsonObject("data");
         ReceivedLocalContents receivedLocalContents = gson.fromJson(jsonData, ReceivedLocalContents.class);
         LOG.info(receivedLocalContents);
         ContentService contentService = new ContentService();
@@ -39,7 +40,8 @@
         out.println(rsp);
         LOG.debug(rsp); 
       }else if  (jsonAll.get("tableName").toString().equals("\"local_relations\"")){
-        
+        ReceivedLocalRelations receivedLocalRelations = gson.fromJson(jsonData, ReceivedLocalRelations.class);
+        LOG.info(receivedLocalRelations);
       }
       //ReceivedControl receivedControl = gson.fromJson(info, classOfT);
       
