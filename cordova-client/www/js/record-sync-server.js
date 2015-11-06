@@ -204,6 +204,7 @@ function receiveSyncRecordRspAjax(msg, tableName) {
 }
 function dbProcReceivedRow(row, tableName) {
 	return function(tx) {
+		mLocalDbProcess = "dbProcReceivedRow";
 		switch (tableName) {
 		case "local_records":
 			tx
@@ -217,27 +218,27 @@ function dbProcReceivedRow(row, tableName) {
 					.executeSql(
 							"SELECT 1 from local_contents where serverId=? and userId=? ;",
 							[ row.serverId, mLocalParameters['userId'] ],
-							updateOrInsertReceivedTitle(row), errorCB);
+							updateOrInsertReceivedContent(row), errorCB);
 			break;
 		}
 
 	}
 }
-function updateOrInsertReceivedTitle(row) {
+function updateOrInsertReceivedContent(row) {
 	return function(tx, results) {
 		if (results.rows.length > 0) {
 			tx
 					.executeSql(
-							"update local_contents set content = ?  ,"
+							"update local_contents set content = ?,contentType=?  ,"
 									+ "state=? ,serverUpdateTime=?,modifyStatus=0 where serverId=?; ",
-							[ row.content, row.state, row.serverUpdateTime,
+							[ row.content,row.contentType, row.state, row.serverUpdateTime,
 									row.serverId ]);
 		} else {
 			tx
 					.executeSql(
-							"insert into local_contents (userId,content,state,"
-									+ "serverUpdateTime,modifyStatus,serverId) values (?,?,?,?,0,?); ",
-							[ mLocalParameters['userId'], row.content,
+							"insert into local_contents (userId,content,contentType,state,"
+									+ "serverUpdateTime,modifyStatus,serverId) values (?,?,?,?,?,0,?); ",
+							[ mLocalParameters['userId'], row.content,row.contentType,
 									row.state, row.serverUpdateTime,
 									row.serverId ],
 							updateRecordTitleClientId(row.serverId));
