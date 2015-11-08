@@ -549,7 +549,7 @@ function getContentServerIdByClientId(clientId) {
 	}
 	function txGetContentServerIdByClientId(tx, results) {
 		if (results.rows.length > 0 && results.rows.item(0).serverId > 0) {
-			result = serverId;
+			result = results.rows.item(0).serverId;
 		}
 	}
 	return result;
