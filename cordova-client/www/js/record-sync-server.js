@@ -1,3 +1,4 @@
+var sqlQuerySpecialForRelation = " and idFrom > 10000000 and idTo > 10000000 ";
 var syncServer = function() {
 	console.log("mSyncStatus:" + mSyncStatus + " "
 			+ ((new Date()).valueOf() - mLastSyncTime));
@@ -141,10 +142,22 @@ function procServerIdFromServer(tableName) {
 
 function dbGetCountNeedServerId(tableName) {
 	return function(tx) {
-		tx.executeSql("SELECT count(clientId) as total from " + tableName
-				+ " where userId=? and serverId is null ;",
-				[ mLocalParameters['userId'] ],
-				handlerGetCountNeedServerId(tableName), errorCB);
+		//todo relation only upload with server Id
+		var sqlCountNeedServerIdBase = "SELECT count(clientId) as total from " + tableName
+		+ " where userId=? and serverId is null  ";
+		switch (tableName){
+		case "local_relations":
+			tx.executeSql(sqlCountNeedServerIdBase+sqlQuerySpecialForRelation,
+					[ mLocalParameters['userId'] ],
+					handlerGetCountNeedServerId(tableName), errorCB);	
+			break;
+		case "local_contents":
+			tx.executeSql(sqlCountNeedServerIdBase,
+					[ mLocalParameters['userId'] ],
+					handlerGetCountNeedServerId(tableName), errorCB);	
+			break;
+		}
+		
 	}
 }
 
@@ -270,13 +283,27 @@ function receiveGetServerIdAjax(msg, count, tableName) {
 
 function dbProcRowNeedServerId(tableName) {
 	return function(tx) {
-		tx
-				.executeSql(
-						"SELECT clientId from "
-								+ tableName
-								+ " where userId=? and serverId is null order by clientId limit ? ;",
-						[ mLocalParameters['userId'], needSyncCount ],
-						handlerUpdateClientServerId(tableName), errorCB);
+		switch(tableName){
+		case "local_contents":
+			tx
+			.executeSql(
+					"SELECT clientId from "
+							+ tableName
+							+ " where userId=? and serverId is null order by clientId limit ? ;",
+					[ mLocalParameters['userId'], needSyncCount ],
+					handlerUpdateClientServerId(tableName), errorCB);
+			break;
+		case "local_relations":
+			tx
+			.executeSql(
+					"SELECT clientId from "
+							+ tableName
+							+ " where userId=? and serverId is null "+sqlQuerySpecialForRelation+" order by clientId limit ? ;",
+					[ mLocalParameters['userId'], needSyncCount ],
+					handlerUpdateClientServerId(tableName), errorCB);
+			break;
+		}
+		
 	}
 }
 function handlerUpdateClientServerId(tableName) {
@@ -286,7 +313,6 @@ function handlerUpdateClientServerId(tableName) {
 			// currentServerId);
 			db.transaction(updateLocalServerId(results, currentServerId,
 					tableName), errorCB)
-
 		} else {
 			// todo no result ;
 			console.log("handlerUpdateClientServerId: no rows .");
@@ -315,6 +341,7 @@ function updateLocalServerId(resultOfClientID, serverId, tableName) {
 	}
 }
 
+//todo : need change to relation
 function dbGetLastUpdateTitleServerId(titleServerId, titleClientId) {
 	return function(tx, results) {
 		tx
