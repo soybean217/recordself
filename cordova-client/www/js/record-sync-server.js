@@ -66,15 +66,15 @@ function withInputDbGetNeedSyncRecords(lastServerTime, tableName) {
 			break;
 		case "local_relations":
 			tx
-			.executeSql(
-					"Select serverId,idFrom,idTo,state,"
-					+ " serverUpdateTime "
-					+ " from local_relations where userId=? "
-					+ "and serverId>0 and modifyStatus = 1 order by clientId limit ? ;",
-					[ mLocalParameters['userId'],
-					  LIMIT_UPDATE_BATCH_SIZE ],
-					  withInputHandlerSyncDataToServer(lastServerTime,
-							  tableName), errorCB);
+					.executeSql(
+							"Select serverId,idFrom,idTo,state,"
+									+ " serverUpdateTime "
+									+ " from local_relations where userId=? "
+									+ "and serverId>0 and modifyStatus = 1 order by clientId limit ? ;",
+							[ mLocalParameters['userId'],
+									LIMIT_UPDATE_BATCH_SIZE ],
+							withInputHandlerSyncDataToServer(lastServerTime,
+									tableName), errorCB);
 			break;
 		}
 	}
@@ -142,22 +142,23 @@ function procServerIdFromServer(tableName) {
 
 function dbGetCountNeedServerId(tableName) {
 	return function(tx) {
-		//todo relation only upload with server Id
-		var sqlCountNeedServerIdBase = "SELECT count(clientId) as total from " + tableName
-		+ " where userId=? and serverId is null  ";
-		switch (tableName){
+		// todo relation only upload with server Id
+		var sqlCountNeedServerIdBase = "SELECT count(clientId) as total from "
+				+ tableName + " where userId=? and serverId is null  ";
+		switch (tableName) {
 		case "local_relations":
-			tx.executeSql(sqlCountNeedServerIdBase+sqlQuerySpecialForRelation,
+			tx.executeSql(
+					sqlCountNeedServerIdBase + sqlQuerySpecialForRelation,
 					[ mLocalParameters['userId'] ],
-					handlerGetCountNeedServerId(tableName), errorCB);	
+					handlerGetCountNeedServerId(tableName), errorCB);
 			break;
 		case "local_contents":
 			tx.executeSql(sqlCountNeedServerIdBase,
 					[ mLocalParameters['userId'] ],
-					handlerGetCountNeedServerId(tableName), errorCB);	
+					handlerGetCountNeedServerId(tableName), errorCB);
 			break;
 		}
-		
+
 	}
 }
 
@@ -199,18 +200,16 @@ function dbProcReceivedRow(row, tableName) {
 		mLocalDbProcess = "dbProcReceivedRow";
 		switch (tableName) {
 		case "local_relations":
-			tx
-					.executeSql(
-							"SELECT 1 from "+tableName+" where serverId=? and userId=? ;",
-							[ row.serverId, mLocalParameters['userId'] ],
-							updateOrInsertReceivedRelation(row), errorCB);
+			tx.executeSql("SELECT 1 from " + tableName
+					+ " where serverId=? and userId=? ;", [ row.serverId,
+					mLocalParameters['userId'] ],
+					updateOrInsertReceivedRelation(row), errorCB);
 			break;
 		case "local_contents":
-			tx
-					.executeSql(
-							"SELECT 1 from "+tableName+" where serverId=? and userId=? ;",
-							[ row.serverId, mLocalParameters['userId'] ],
-							updateOrInsertReceivedContent(row), errorCB);
+			tx.executeSql("SELECT 1 from " + tableName
+					+ " where serverId=? and userId=? ;", [ row.serverId,
+					mLocalParameters['userId'] ],
+					updateOrInsertReceivedContent(row), errorCB);
 			break;
 		}
 	}
@@ -222,16 +221,17 @@ function updateOrInsertReceivedContent(row) {
 					.executeSql(
 							"update local_contents set content = ?,contentType=?  ,"
 									+ "state=? ,serverUpdateTime=?,modifyStatus=0 where serverId=?; ",
-							[ row.content,row.contentType, row.state, row.serverUpdateTime,
-									row.serverId ]);
+							[ row.content, row.contentType, row.state,
+									row.serverUpdateTime, row.serverId ]);
 		} else {
 			tx
 					.executeSql(
 							"insert into local_contents (userId,content,contentType,state,"
 									+ "serverUpdateTime,modifyStatus,serverId,lastLocalTime) values (?,?,?,?,?,0,?,?); ",
-							[ mLocalParameters['userId'], row.content,row.contentType,
-									row.state, row.serverUpdateTime,
-									row.serverId ,(new Date()).valueOf()],
+							[ mLocalParameters['userId'], row.content,
+									row.contentType, row.state,
+									row.serverUpdateTime, row.serverId,
+									(new Date()).valueOf() ],
 							updateRecordTitleClientId(row.serverId));
 		}
 	}
@@ -258,14 +258,14 @@ function updateOrInsertReceivedRelation(row) {
 					.executeSql(
 							"update local_relations set idFrom = ?,idTo=?  ,"
 									+ "state=? ,serverUpdateTime=?,modifyStatus=0 where serverId=?; ",
-							[ row.idFrom,row.idTo, row.state, row.serverUpdateTime,
-									row.serverId ]);
+							[ row.idFrom, row.idTo, row.state,
+									row.serverUpdateTime, row.serverId ]);
 		} else {
 			tx
 					.executeSql(
 							"insert into local_relations (userId,idFrom,idTo,state,"
 									+ "serverUpdateTime,modifyStatus,serverId) values (?,?,?,?,?,0,?); ",
-							[ mLocalParameters['userId'], row.idFrom,row.idTo,
+							[ mLocalParameters['userId'], row.idFrom, row.idTo,
 									row.state, row.serverUpdateTime,
 									row.serverId ],
 							updateRecordTitleClientId(row.serverId));
@@ -283,27 +283,26 @@ function receiveGetServerIdAjax(msg, count, tableName) {
 
 function dbProcRowNeedServerId(tableName) {
 	return function(tx) {
-		switch(tableName){
+		switch (tableName) {
 		case "local_contents":
 			tx
-			.executeSql(
-					"SELECT clientId from "
-							+ tableName
-							+ " where userId=? and serverId is null order by clientId limit ? ;",
-					[ mLocalParameters['userId'], needSyncCount ],
-					handlerUpdateClientServerId(tableName), errorCB);
+					.executeSql(
+							"SELECT clientId from "
+									+ tableName
+									+ " where userId=? and serverId is null order by clientId limit ? ;",
+							[ mLocalParameters['userId'], needSyncCount ],
+							handlerUpdateClientServerId(tableName), errorCB);
 			break;
 		case "local_relations":
-			tx
-			.executeSql(
-					"SELECT clientId from "
-							+ tableName
-							+ " where userId=? and serverId is null "+sqlQuerySpecialForRelation+" order by clientId limit ? ;",
-					[ mLocalParameters['userId'], needSyncCount ],
+			tx.executeSql("SELECT clientId from " + tableName
+					+ " where userId=? and serverId is null "
+					+ sqlQuerySpecialForRelation
+					+ " order by clientId limit ? ;", [
+					mLocalParameters['userId'], needSyncCount ],
 					handlerUpdateClientServerId(tableName), errorCB);
 			break;
 		}
-		
+
 	}
 }
 function handlerUpdateClientServerId(tableName) {
@@ -327,7 +326,7 @@ function updateLocalServerId(resultOfClientID, serverId, tableName) {
 						+ " set serverId=? where clientId = ?; ", [
 						serverId.toString(),
 						resultOfClientID.rows.item(i).clientId ],
-						dbGetLastUpdateTitleServerId(serverId.toString(),
+						dbGetLastUpdateRelationServerId(serverId.toString(),
 								resultOfClientID.rows.item(i).clientId));
 			} else {
 				tx.executeSql("update " + tableName
@@ -341,13 +340,17 @@ function updateLocalServerId(resultOfClientID, serverId, tableName) {
 	}
 }
 
-//todo : need change to relation
-function dbGetLastUpdateTitleServerId(titleServerId, titleClientId) {
+// todo : need change to relation
+function dbGetLastUpdateRelationServerId(serverId, clientId) {
 	return function(tx, results) {
 		tx
 				.executeSql(
-						'update local_records set titleServerId=?,modifyStatus=1 where titleClientId=?',
-						[ titleServerId, titleClientId ]);
+						'update local_relations set idFrom=?,modifyStatus=1 where idFrom=?',
+						[ serverId, clientId ]);
+		tx
+				.executeSql(
+						'update local_relations set idTo=?,modifyStatus=1 where idTo=?',
+						[ serverId, clientId ]);
 	}
 }
 
