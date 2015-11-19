@@ -70,6 +70,7 @@ function withInputDbGetNeedSyncRecords(lastServerTime, tableName) {
 							"Select serverId,idFrom,idTo,state,"
 									+ " serverUpdateTime "
 									+ " from local_relations where userId=? "
+									+ sqlQuerySpecialForRelation
 									+ "and serverId>0 and modifyStatus = 1 order by clientId limit ? ;",
 							[ mLocalParameters['userId'],
 									LIMIT_UPDATE_BATCH_SIZE ],
@@ -277,6 +278,7 @@ function receiveGetServerIdAjax(msg, count, tableName) {
 	currentServerId = bigInt(msg.data);
 	needSyncCount = count;
 	if (currentServerId > 0) {
+		console.log(currentServerId);
 		db.transaction(dbProcRowNeedServerId(tableName), errorCB);
 	}
 }
@@ -296,7 +298,6 @@ function dbProcRowNeedServerId(tableName) {
 		case "local_relations":
 			tx.executeSql("SELECT clientId from " + tableName
 					+ " where userId=? and serverId is null "
-					+ sqlQuerySpecialForRelation
 					+ " order by clientId limit ? ;", [
 					mLocalParameters['userId'], needSyncCount ],
 					handlerUpdateClientServerId(tableName), errorCB);
@@ -343,6 +344,7 @@ function updateLocalServerId(resultOfClientID, serverId, tableName) {
 // todo : need change to relation
 function dbGetLastUpdateRelationServerId(serverId, clientId) {
 	return function(tx, results) {
+		console.log("relation serverId:"+serverId+".clientId:"+ clientId);
 		tx
 				.executeSql(
 						'update local_relations set idFrom=?,modifyStatus=1 where idFrom=?',

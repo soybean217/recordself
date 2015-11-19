@@ -287,16 +287,16 @@ function populateDB(tx) {
 	// tx.executeSql('DROP TABLE IF EXISTS local_system_parameters');
 	tx
 			.executeSql('CREATE TABLE IF NOT EXISTS local_system_parameters (title text primary key, detail text)');
-	tx.executeSql('DROP TABLE IF EXISTS local_records');
-	tx.executeSql('CREATE TABLE IF NOT EXISTS local_records ('
-			+ 'clientId integer primary key,' + 'userId text,'
-			+ 'serverId text UNIQUE,' + 'title text not null,detail text,'
-			+ 'beginTime integer default 0,' + 'endTime integer default 0,'
-			+ 'state integer default 0,'
-			+ 'serverUpdateTime integer default 0,'
-			+ 'modifyStatus integer default 1 ,' + 'titleClientId integer ,'
-			+ 'titleServerId text )');
-	// tx.executeSql('DROP TABLE IF EXISTS local_contents');
+//	tx.executeSql('DROP TABLE IF EXISTS local_records');
+//	tx.executeSql('CREATE TABLE IF NOT EXISTS local_records ('
+//			+ 'clientId integer primary key,' + 'userId text,'
+//			+ 'serverId text UNIQUE,' + 'title text not null,detail text,'
+//			+ 'beginTime integer default 0,' + 'endTime integer default 0,'
+//			+ 'state integer default 0,'
+//			+ 'serverUpdateTime integer default 0,'
+//			+ 'modifyStatus integer default 1 ,' + 'titleClientId integer ,'
+//			+ 'titleServerId text )');
+//	tx.executeSql('DROP TABLE IF EXISTS local_contents');
 	tx.executeSql('CREATE TABLE IF NOT EXISTS local_contents ('
 			+ 'clientId integer primary key,' + 'userId text,'
 			+ 'serverId text UNIQUE,' + 'content text not null,'
@@ -304,11 +304,11 @@ function populateDB(tx) {
 			+ 'state integer default 0,'
 			+ 'serverUpdateTime integer default 0,'
 			+ 'modifyStatus integer default 1 )');
-	// tx.executeSql('DROP TABLE IF EXISTS local_relations');
+//	tx.executeSql('DROP TABLE IF EXISTS local_relations');
 	tx.executeSql('CREATE TABLE IF NOT EXISTS local_relations ('
 			+ 'clientId integer primary key,' + 'userId text,'
-			+ 'serverId text UNIQUE,' + 'idFrom integer not null,'
-			+ 'idTo integer not null,' + 'state integer default 0,'
+			+ 'serverId text UNIQUE,' + 'idFrom text not null,'
+			+ 'idTo text not null,' + 'state integer default 0,'
 			+ 'serverUpdateTime integer default 0,'
 			+ 'modifyStatus integer default 1 )');
 	checkParametersForInitial(tx);
@@ -444,7 +444,7 @@ function refreshRecordListView(tx, results) {
 	mRecordTable.rows.add(mRecordDataSet);
 	mRecordTable.draw();
 
-//	var syncThread = new syncServer();
+	// var syncThread = new syncServer();
 }
 function dbQueryCatalog(tx) {
 	tx
