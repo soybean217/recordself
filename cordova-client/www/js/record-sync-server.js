@@ -1,4 +1,5 @@
 var sqlQuerySpecialForRelation = " and idFrom > 10000000 and idTo > 10000000 ";
+var SERVER_ID_LENGTH = 13;
 var syncServer = function() {
 	console.log("mSyncStatus:" + mSyncStatus + " "
 			+ ((new Date()).valueOf() - mLastSyncTime));
@@ -8,10 +9,12 @@ var syncServer = function() {
 		mSyncStatus = 'work';
 		mLastSyncTime = (new Date()).valueOf();
 		var needSyncCount = 0;
-		var currentServerId = bigInt(0);
+//		var currentServerId = bigInt(0);
+		//todo effect area .
+		var currentServerId = "";
 
 		procServerIdFromServer("local_contents");
-		procServerIdFromServer("local_relations");
+		//procServerIdFromServer("local_relations");
 	}
 }
 function syncLocalToServer(tableName) {
@@ -104,6 +107,7 @@ function withInputHandlerSyncDataToServer(lastServerTime, tableName) {
 				break;
 			case "local_relations":
 				row.serverId = results.rows.item(i).serverId;
+				console.log(results.rows.item(i).idFrom+":"+results.rows.item(i).idTo);
 				row.idFrom = results.rows.item(i).idFrom;
 				row.idTo = results.rows.item(i).idTo;
 				row.state = results.rows.item(i).state;
@@ -275,9 +279,10 @@ function updateOrInsertReceivedRelation(row) {
 }
 
 function receiveGetServerIdAjax(msg, count, tableName) {
-	currentServerId = bigInt(msg.data);
+//	currentServerId = bigInt(msg.data);
+	currentServerId = msg.data;
 	needSyncCount = count;
-	if (currentServerId > 0) {
+	if (currentServerId.length == SERVER_ID_LENGTH) {
 		console.log(currentServerId);
 		db.transaction(dbProcRowNeedServerId(tableName), errorCB);
 	}
