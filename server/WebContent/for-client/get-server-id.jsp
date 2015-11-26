@@ -1,5 +1,6 @@
 <%@page import="org.common.util.ConfigManager"%>
 <%@page import="org.common.util.GenerateIdService"%>
+<%@page import="org.common.util.HexChange"%>
 <%@page import="com.recordself.json.protocol.ApplyServerIdRsp"%>
 <%@page import="org.json.JSONObject"%>
 <%@page import="com.recordself.json.protocol.SignUpRsp"%>
@@ -12,7 +13,9 @@
     JSONObject receive = new JSONObject(info);
    
     ApplyServerIdRsp applyServerIdRsp = new ApplyServerIdRsp();
-    applyServerIdRsp.setData(Long.toString(GenerateIdService.getInstance().generateNew(Integer.parseInt(ConfigManager.getConfigData("server.id")), receive.getString("keyTitle"), receive.getInt("amount"))));
+    long resultLong = GenerateIdService.getInstance().generateNew(Integer.parseInt(ConfigManager.getConfigData("server.id")), receive.getString("keyTitle"), receive.getInt("amount"));
+    LOG.debug(HexChange.convertToOtherHex(resultLong));
+    applyServerIdRsp.setData(HexChange.convertToOtherHex(resultLong));
     applyServerIdRsp.setStatus("success");
     Gson gson = new Gson();
     String rsp = gson.toJson(applyServerIdRsp);
