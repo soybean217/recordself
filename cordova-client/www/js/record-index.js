@@ -287,7 +287,7 @@ function populateDB(tx) {
 	// tx.executeSql('DROP TABLE IF EXISTS local_system_parameters');
 	tx
 			.executeSql('CREATE TABLE IF NOT EXISTS local_system_parameters (title text primary key, detail text)');
-//	tx.executeSql('DROP TABLE IF EXISTS local_records');
+	tx.executeSql('DROP TABLE IF EXISTS local_records');
 //	tx.executeSql('CREATE TABLE IF NOT EXISTS local_records ('
 //			+ 'clientId integer primary key,' + 'userId text,'
 //			+ 'serverId text UNIQUE,' + 'title text not null,detail text,'

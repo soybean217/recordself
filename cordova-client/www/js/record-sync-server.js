@@ -1,5 +1,11 @@
 var sqlQuerySpecialForRelation = " and idFrom > 10000000 and idTo > 10000000 ";
 var SERVER_ID_LENGTH = 13;
+
+// todo need move into function
+var needSyncCount = 0;
+var currentServerId = "";
+// end above
+
 var syncServer = function() {
 	console.log("mSyncStatus:" + mSyncStatus + " "
 			+ ((new Date()).valueOf() - mLastSyncTime));
@@ -8,13 +14,8 @@ var syncServer = function() {
 		console.log("begin sync");
 		mSyncStatus = 'work';
 		mLastSyncTime = (new Date()).valueOf();
-		var needSyncCount = 0;
-//		var currentServerId = bigInt(0);
-		//todo effect area .
-		var currentServerId = "";
-
 		procServerIdFromServer("local_contents");
-		//procServerIdFromServer("local_relations");
+		// procServerIdFromServer("local_relations");
 	}
 }
 function syncLocalToServer(tableName) {
@@ -107,7 +108,8 @@ function withInputHandlerSyncDataToServer(lastServerTime, tableName) {
 				break;
 			case "local_relations":
 				row.serverId = results.rows.item(i).serverId;
-				console.log(results.rows.item(i).idFrom+":"+results.rows.item(i).idTo);
+				console.log(results.rows.item(i).idFrom + ":"
+						+ results.rows.item(i).idTo);
 				row.idFrom = results.rows.item(i).idFrom;
 				row.idTo = results.rows.item(i).idTo;
 				row.state = results.rows.item(i).state;
@@ -279,7 +281,7 @@ function updateOrInsertReceivedRelation(row) {
 }
 
 function receiveGetServerIdAjax(msg, count, tableName) {
-//	currentServerId = bigInt(msg.data);
+	// currentServerId = bigInt(msg.data);
 	currentServerId = msg.data;
 	needSyncCount = count;
 	if (currentServerId.length == SERVER_ID_LENGTH) {
@@ -314,8 +316,6 @@ function dbProcRowNeedServerId(tableName) {
 function handlerUpdateClientServerId(tableName) {
 	return function(tx, results) {
 		if (results.rows.length > 0) {
-			// getTransaction(updateLocalServerId, results,
-			// currentServerId);
 			db.transaction(updateLocalServerId(results, currentServerId,
 					tableName), errorCB)
 		} else {
@@ -328,9 +328,10 @@ function updateLocalServerId(resultOfClientID, serverId, tableName) {
 	return function(tx) {
 		for (var i = 0; i < resultOfClientID.rows.length; i++) {
 			if (tableName == "local_contents") {
+				console.log(serverId + ":"
+						+ resultOfClientID.rows.item(i).clientId);
 				tx.executeSql("update " + tableName
-						+ " set serverId=? where clientId = ?; ", [
-						serverId.toString(),
+						+ " set serverId=? where clientId = ?; ", [ serverId,
 						resultOfClientID.rows.item(i).clientId ],
 						dbGetLastUpdateRelationServerId(serverId.toString(),
 								resultOfClientID.rows.item(i).clientId));
@@ -340,7 +341,8 @@ function updateLocalServerId(resultOfClientID, serverId, tableName) {
 						serverId.toString(),
 						resultOfClientID.rows.item(i).clientId ]);
 			}
-			serverId = serverId.add(1);
+			// serverId = serverId.add(1);
+			serverId = hexAddOne(serverId);
 		}
 		syncLocalToServer(tableName);
 	}
@@ -349,7 +351,7 @@ function updateLocalServerId(resultOfClientID, serverId, tableName) {
 // todo : need change to relation
 function dbGetLastUpdateRelationServerId(serverId, clientId) {
 	return function(tx, results) {
-		console.log("relation serverId:"+serverId+".clientId:"+ clientId);
+		console.log("relation serverId:" + serverId + ".clientId:" + clientId);
 		tx
 				.executeSql(
 						'update local_relations set idFrom=?,modifyStatus=1 where idFrom=?',
