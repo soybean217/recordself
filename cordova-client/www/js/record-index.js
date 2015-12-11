@@ -520,7 +520,7 @@ function processRecordMetadata(editRecord) {
 				'MetadataRecordBeginTime', editRecord.beginTimeInputString);
 		// sync get catalogServerId
 		var catalogServerId = getContentServerIdByClientId(editRecord.catalogClientId);
-		if (catalogServerId > 0) {
+		if (catalogServerId!=null&&catalogServerId.length==LENGTH_FIX) {
 			db.transaction(insertRelationFreshCatalog(catalogServerId,
 					results.insertId), errorCB);
 		} else {

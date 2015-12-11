@@ -12,6 +12,7 @@ import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.log4j.Logger;
 import org.common.util.Base;
 import org.common.util.ConnectionService;
+import org.common.util.HexChange;
 
 import com.recordself.entity.Content;
 import com.recordself.entity.User;
@@ -67,9 +68,9 @@ public class ContentService {
       StringBuilder sql = new StringBuilder();
       // perhaps thread issue , think about lock
       for (Content record : receiveWithServerIdList) {
-        if (Base.isNumeric(record.getServerId()) && Long.parseLong(record.getServerId()) > 0) {
-          sql.append("union all SELECT " + SQL_COLUMN + " FROM server_contents where serverId = "
-              + record.getServerId() + " ");
+        if (record.getServerId()!=null&&record.getServerId().length()==HexChange.OUTPUT_FIX_LENGTH) {
+          sql.append("union all SELECT " + SQL_COLUMN + " FROM server_contents where serverId = '"
+              + record.getServerId() + "' ");
         } else {
           LOG.error(record.getServerId() + ":not correct . user id :" + user.getUserId());
         }
