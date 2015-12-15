@@ -519,14 +519,7 @@ function processRecordMetadata(editRecord) {
 		insertRecordMetadataTransaction(results.insertId,
 				'MetadataRecordBeginTime', editRecord.beginTimeInputString);
 		// sync get catalogServerId
-		var catalogServerId = getContentServerIdByClientId(editRecord.catalogClientId);
-		if (catalogServerId!=null&&catalogServerId.length==LENGTH_FIX) {
-			db.transaction(insertRelationFreshCatalog(catalogServerId,
-					results.insertId), errorCB);
-		} else {
-			db.transaction(insertRelationFreshCatalog(
-					editRecord.catalogClientId, results.insertId), errorCB);
-		}
+		getContentServerIdByClientId(editRecord.catalogClientId,results.insertId);
 		db
 				.transaction(
 						dbUpdateConentLastLocalTimeByClientId(editRecord.catalogClientId),
@@ -534,7 +527,7 @@ function processRecordMetadata(editRecord) {
 	}
 }
 
-function getContentServerIdByClientId(clientId) {
+function getContentServerIdByClientId(clientId,lastInsertId) {
 	var result = 0;
 	db.transaction(dbGetContentServerIdByClientId(clientId), errorCB)
 
@@ -548,8 +541,17 @@ function getContentServerIdByClientId(clientId) {
 		}
 	}
 	function txGetContentServerIdByClientId(tx, results) {
-		if (results.rows.length > 0 && results.rows.item(0).serverId > 0) {
+		if (results.rows.length > 0 && results.rows.item(0).serverId.length==LENGTH_FIX) {
 			result = results.rows.item(0).serverId;
+			db.transaction(insertRelationFreshCatalog(result,
+					results.insertId), errorCB);
+		}
+		// todo async change to callback 
+		if (catalogServerId!=null&&catalogServerId.length==LENGTH_FIX) {
+			
+		} else {
+			db.transaction(insertRelationFreshCatalog(
+					editRecord.catalogClientId, results.insertId), errorCB);
 		}
 	}
 	return result;
