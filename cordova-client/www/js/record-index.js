@@ -288,15 +288,15 @@ function populateDB(tx) {
 	tx
 			.executeSql('CREATE TABLE IF NOT EXISTS local_system_parameters (title text primary key, detail text)');
 	tx.executeSql('DROP TABLE IF EXISTS local_records');
-//	tx.executeSql('CREATE TABLE IF NOT EXISTS local_records ('
-//			+ 'clientId integer primary key,' + 'userId text,'
-//			+ 'serverId text UNIQUE,' + 'title text not null,detail text,'
-//			+ 'beginTime integer default 0,' + 'endTime integer default 0,'
-//			+ 'state integer default 0,'
-//			+ 'serverUpdateTime integer default 0,'
-//			+ 'modifyStatus integer default 1 ,' + 'titleClientId integer ,'
-//			+ 'titleServerId text )');
-//	tx.executeSql('DROP TABLE IF EXISTS local_contents');
+	// tx.executeSql('CREATE TABLE IF NOT EXISTS local_records ('
+	// + 'clientId integer primary key,' + 'userId text,'
+	// + 'serverId text UNIQUE,' + 'title text not null,detail text,'
+	// + 'beginTime integer default 0,' + 'endTime integer default 0,'
+	// + 'state integer default 0,'
+	// + 'serverUpdateTime integer default 0,'
+	// + 'modifyStatus integer default 1 ,' + 'titleClientId integer ,'
+	// + 'titleServerId text )');
+	// tx.executeSql('DROP TABLE IF EXISTS local_contents');
 	tx.executeSql('CREATE TABLE IF NOT EXISTS local_contents ('
 			+ 'clientId integer primary key,' + 'userId text,'
 			+ 'serverId text UNIQUE,' + 'content text not null,'
@@ -304,7 +304,7 @@ function populateDB(tx) {
 			+ 'state integer default 0,'
 			+ 'serverUpdateTime integer default 0,'
 			+ 'modifyStatus integer default 1 )');
-//	tx.executeSql('DROP TABLE IF EXISTS local_relations');
+	// tx.executeSql('DROP TABLE IF EXISTS local_relations');
 	tx.executeSql('CREATE TABLE IF NOT EXISTS local_relations ('
 			+ 'clientId integer primary key,' + 'userId text,'
 			+ 'serverId text UNIQUE,' + 'idFrom text not null,'
@@ -396,8 +396,11 @@ function dbQueryRecord(catalogId) {
 									+ " WHERE r.idTo = c.clientId and r.idFrom IN (SELECT clientId FROM local_contents "
 									+ " WHERE state<>-1 and contentType='SchemaRecord' and userId= ? "
 									+ "  and (clientId IN (SELECT idTo FROM `local_relations` WHERE idFrom = ? ) "
-									+ "  OR clientId IN (SELECT idTo FROM `local_relations` "
-									+ " WHERE idFrom = (select serverId from local_contents where clientId=?) )) "
+									+ "   OR serverId IN (SELECT idTo FROM `local_relations` WHERE idFrom = ? )  "
+									+ "   OR clientId IN (SELECT idTo FROM `local_relations` "
+									+ "    WHERE idFrom = (select serverId from local_contents where clientId=?) ) "
+									+ "   OR serverId IN (SELECT idTo FROM `local_relations` "
+									+ "    WHERE idFrom = (select serverId from local_contents where clientId=?) )) "
 									+ " AND c.contentType='MetadataRecordContent'"
 									+ "  ) "
 									+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.lastLocalTime DESC"
@@ -519,7 +522,8 @@ function processRecordMetadata(editRecord) {
 		insertRecordMetadataTransaction(results.insertId,
 				'MetadataRecordBeginTime', editRecord.beginTimeInputString);
 		// sync get catalogServerId
-		getContentServerIdByClientId(editRecord.catalogClientId,results.insertId);
+		getContentServerIdByClientId(editRecord.catalogClientId,
+				results.insertId);
 		db
 				.transaction(
 						dbUpdateConentLastLocalTimeByClientId(editRecord.catalogClientId),
@@ -527,7 +531,7 @@ function processRecordMetadata(editRecord) {
 	}
 }
 
-function getContentServerIdByClientId(clientId,lastInsertId) {
+function getContentServerIdByClientId(clientId, lastInsertId) {
 	var result = 0;
 	db.transaction(dbGetContentServerIdByClientId(clientId), errorCB)
 
@@ -541,17 +545,15 @@ function getContentServerIdByClientId(clientId,lastInsertId) {
 		}
 	}
 	function txGetContentServerIdByClientId(tx, results) {
-		if (results.rows.length > 0 && results.rows.item(0).serverId.length==LENGTH_FIX) {
+		if (results.rows.length > 0
+				&& results.rows.item(0).serverId.length == LENGTH_FIX) {
 			result = results.rows.item(0).serverId;
-			db.transaction(insertRelationFreshCatalog(result,
-					results.insertId), errorCB);
-		}
-		// todo async change to callback 
-		if (catalogServerId!=null&&catalogServerId.length==LENGTH_FIX) {
-			
+			console.log("serverId:" + result);
+			db.transaction(insertRelationFreshCatalog(result, lastInsertId),
+					errorCB);
 		} else {
 			db.transaction(insertRelationFreshCatalog(
-					editRecord.catalogClientId, results.insertId), errorCB);
+					editRecord.catalogClientId, lastInsertId), errorCB);
 		}
 	}
 	return result;
