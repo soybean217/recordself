@@ -389,11 +389,11 @@ function dbQueryRecord(catalogId) {
 		if (catalogId != null && catalogId > 0) {
 			tx
 					.executeSql(
-							"SELECT r.idFrom AS clientId,c.serverId AS serverId,c.content AS title,'detail' AS detail,"
+							"SELECT c.clientId AS clientId,c.serverId AS serverId,c.content AS title,'detail' AS detail,"
 									+ " c.serverUpdateTime AS serverUpdateTime,c.modifyStatus AS modifyStatus,"
 									+ " c.lastLocalTime as lastLocalTime,1 as endTime,1 as titleClientId,r.idFrom,r.idTo "
 									+ " FROM `local_contents` as c , `local_relations` as r "
-									+ " WHERE r.idTo = c.clientId and r.idFrom IN (SELECT clientId FROM local_contents "
+									+ " WHERE (r.idTo = c.clientId or r.idTo = c.serverId) and r.idFrom IN (SELECT serverId FROM local_contents "
 									+ " WHERE state<>-1 and contentType='SchemaRecord' and userId= ? "
 									+ "  and (clientId IN (SELECT idTo FROM `local_relations` WHERE idFrom = ? ) "
 									+ "   OR serverId IN (SELECT idTo FROM `local_relations` WHERE idFrom = ? )  "
@@ -402,26 +402,38 @@ function dbQueryRecord(catalogId) {
 									+ "   OR serverId IN (SELECT idTo FROM `local_relations` "
 									+ "    WHERE idFrom = (select serverId from local_contents where clientId=?) )) "
 									+ " AND c.contentType='MetadataRecordContent'"
-									+ "  ) "
+									+ "  union SELECT clientId FROM local_contents "
+									+ " WHERE state<>-1 and contentType='SchemaRecord' and userId= ? "
+									+ "  and (clientId IN (SELECT idTo FROM `local_relations` WHERE idFrom = ? ) "
+									+ "   OR serverId IN (SELECT idTo FROM `local_relations` WHERE idFrom = ? )  "
+									+ "   OR clientId IN (SELECT idTo FROM `local_relations` "
+									+ "    WHERE idFrom = (select serverId from local_contents where clientId=?) ) "
+									+ "   OR serverId IN (SELECT idTo FROM `local_relations` "
+									+ "    WHERE idFrom = (select serverId from local_contents where clientId=?) )) "
+									+ " AND c.contentType='MetadataRecordContent') "
 									+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.lastLocalTime DESC"
 									+ " limit 0,?;", [
 									mLocalParameters['userId'], catalogId,
-									catalogId, mRecordLimit ],
-							refreshRecordListView, errorCB);
+									catalogId, catalogId, catalogId,mLocalParameters['userId'], catalogId,
+									catalogId, catalogId, catalogId,
+									mRecordLimit ], refreshRecordListView,
+							errorCB);
 
 		} else {
 			tx
 					.executeSql(
-							"SELECT r.idFrom AS clientId,c.serverId AS serverId,c.content AS title,'detail' AS detail,"
+							"SELECT c.clientId AS clientId,c.serverId AS serverId,c.content AS title,'detail' AS detail,"
 									+ " c.serverUpdateTime AS serverUpdateTime,c.modifyStatus AS modifyStatus,"
 									+ " c.lastLocalTime as lastLocalTime,1 as endTime,1 as titleClientId,r.idFrom,r.idTo "
 									+ " FROM `local_contents` as c , `local_relations` as r "
 									+ " WHERE r.idFrom IN (SELECT clientId FROM local_contents "
+									+ " WHERE state<>-1 and contentType='SchemaRecord' and userId= ? " +
+											"union SELECT serverId FROM local_contents "
 									+ " WHERE state<>-1 and contentType='SchemaRecord' and userId= ? ) "
-									+ " AND r.idTo = c.clientId AND c.contentType='MetadataRecordContent' "
+									+ " AND (r.idTo = c.clientId or r.idTo = c.serverId) AND c.contentType='MetadataRecordContent' "
 									+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.lastLocalTime DESC"
 									+ " limit 0,?;", [
-									mLocalParameters['userId'], mRecordLimit ],
+									mLocalParameters['userId'],mLocalParameters['userId'], mRecordLimit ],
 							refreshRecordListView, errorCB);
 		}
 	}
@@ -431,7 +443,7 @@ function refreshRecordListView(tx, results) {
 	var mRow = [];
 	mRecordDataSet = [];
 	var len = results.rows.length;
-	for (var i = 0; i < len; i++) { // loop as many times as there are row
+	for (var i = 0; i < len; i++) { 
 		var mRow = [
 				results.rows.item(i).clientId,
 				results.rows.item(i).title,
