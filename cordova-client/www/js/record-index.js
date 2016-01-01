@@ -414,7 +414,8 @@ function dbQueryRecord(catalogId) {
 									+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.lastLocalTime DESC"
 									+ " limit 0,?;", [
 									mLocalParameters['userId'], catalogId,
-									catalogId, catalogId, catalogId,mLocalParameters['userId'], catalogId,
+									catalogId, catalogId, catalogId,
+									mLocalParameters['userId'], catalogId,
 									catalogId, catalogId, catalogId,
 									mRecordLimit ], refreshRecordListView,
 							errorCB);
@@ -427,13 +428,14 @@ function dbQueryRecord(catalogId) {
 									+ " c.lastLocalTime as lastLocalTime,1 as endTime,1 as titleClientId,r.idFrom,r.idTo "
 									+ " FROM `local_contents` as c , `local_relations` as r "
 									+ " WHERE r.idFrom IN (SELECT clientId FROM local_contents "
-									+ " WHERE state<>-1 and contentType='SchemaRecord' and userId= ? " +
-											"union SELECT serverId FROM local_contents "
+									+ " WHERE state<>-1 and contentType='SchemaRecord' and userId= ? "
+									+ "union SELECT serverId FROM local_contents "
 									+ " WHERE state<>-1 and contentType='SchemaRecord' and userId= ? ) "
 									+ " AND (r.idTo = c.clientId or r.idTo = c.serverId) AND c.contentType='MetadataRecordContent' "
 									+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.lastLocalTime DESC"
 									+ " limit 0,?;", [
-									mLocalParameters['userId'],mLocalParameters['userId'], mRecordLimit ],
+									mLocalParameters['userId'],
+									mLocalParameters['userId'], mRecordLimit ],
 							refreshRecordListView, errorCB);
 		}
 	}
@@ -443,9 +445,9 @@ function refreshRecordListView(tx, results) {
 	var mRow = [];
 	mRecordDataSet = [];
 	var len = results.rows.length;
-	for (var i = 0; i < len; i++) { 
+	for (var i = 0; i < len; i++) {
 		var mRow = [
-				results.rows.item(i).clientId,
+				results.rows.item(i).idFrom,
 				results.rows.item(i).title,
 				results.rows.item(i).detail,
 				new Date(results.rows.item(i).lastLocalTime)
@@ -673,7 +675,8 @@ function dbDeleteSingleRecord(tx) {
 }
 
 function divRecordFormFill(recordId) {
-	if (recordId > 0) {
+	console.log("divRecordFormFill:" + recordId);
+	if (recordId != null && recordId != "") {
 		db.transaction(getRecordInfo(recordId), errorCB);
 	}
 
@@ -686,20 +689,22 @@ function divRecordFormFill(recordId) {
 									+ " c.serverUpdateTime AS serverUpdateTime,c.modifyStatus AS modifyStatus,"
 									+ " c.lastLocalTime as lastLocalTime,  r.idFrom,r.idTo,r.clientId as relationClientId"
 									+ "  FROM `local_contents` as c ,  `local_relations` as r"
-									+ " WHERE r.idTo = c.clientId and r.idFrom = ? "
+									+ " WHERE (r.idTo = c.clientId or r.idTo = c.serverId) and r.idFrom = ? "
 									+ "union "
 									+ "SELECT c.clientId AS contentClientId,c.contentType as contentType,"
 									+ " c.serverId AS serverId,c.content AS content,"
 									+ " c.serverUpdateTime AS serverUpdateTime,c.modifyStatus AS modifyStatus,"
 									+ " c.lastLocalTime as lastLocalTime,  r.idFrom,r.idTo,r.clientId as relationClientId"
-									+ "  FROM `local_contents` as c ,  `local_relations` as r"
-									+ "  WHERE r.idFrom = c.clientId	and  r.idTo=?",
+									+ "  FROM `local_contents` as c , `local_relations` as r"
+									+ "  WHERE (r.idFrom = c.clientId or r.idFrom = c.serverId) and  r.idTo=?",
 							[ recordId, recordId ],
 							procResultByRecordClientId(recordClientId));
 		}
 	}
 	function displayRecord(resultObject) {
-		if (resultObject['RecordClientId'] > 0) {
+		if (resultObject['RecordClientId'] != null
+				&& resultObject['RecordClientId'] != "") {
+			console.log("displayRecord:" + resultObject['RecordClientId']);
 			mCurrentRecord = resultObject;
 			$("#recordEditId").val(resultObject['RecordClientId']);
 			if (resultObject['MetadataRecordContent'] != null) {
@@ -749,10 +754,13 @@ function divRecordFormFill(recordId) {
 		// 
 
 	}
-	function procResultByRecordClientId(recordClientId) {
+	function procResultByRecordClientId(recordId) {
 		var resultObject = {};
 		return function(tx, results) {
 			if (results.rows.length > 0) {
+				console
+						.log("procResultByRecordClientId:"
+								+ results.rows.length);
 				for (i = 0; i < results.rows.length; i++) {
 					if (resultObject[results.rows.item(i).contentType] == null) {
 						resultObject[results.rows.item(i).contentType] = new Array();
@@ -760,10 +768,16 @@ function divRecordFormFill(recordId) {
 					}
 					resultObject[results.rows.item(i).contentType]
 							.push(results.rows.item(i));
+					console.log(results.rows.item(i).contentType + ":"
+							+ results.rows.item(i));
 				}
-				resultObject['RecordClientId'] = recordClientId;
+				resultObject['RecordClientId'] = recordId;
 			}
-			displayRecord(resultObject);
+			if (recordId.length==LENGTH_FIX){
+				//todo get clientId from serverId with callback
+			}else{
+				displayRecord(resultObject);	
+			}
 		}
 	}
 }
