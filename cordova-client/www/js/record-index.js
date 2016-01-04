@@ -562,12 +562,37 @@ function getContentServerIdByClientId(clientId, lastInsertId) {
 		if (results.rows.length > 0
 				&& results.rows.item(0).serverId.length == LENGTH_FIX) {
 			result = results.rows.item(0).serverId;
-			console.log("serverId:" + result);
 			db.transaction(insertRelationFreshCatalog(result, lastInsertId),
 					errorCB);
 		} else {
 			db.transaction(insertRelationFreshCatalog(
 					editRecord.catalogClientId, lastInsertId), errorCB);
+		}
+	}
+	return result;
+}
+
+function getClientIdByServerId(serverId, onSuccessCallback) {
+	var result = 0;
+	db.transaction(dbGetClientIdByServerId(serverId), errorCB)
+	
+	function dbGetClientIdByServerId(serverId) {
+		return function(tx) {
+			tx
+			.executeSql(
+					"select clientId from local_contents where serverId = ? and userId=?",
+					[ serverId, mLocalParameters['userId'] ],
+					txGetClientIdByServerId);
+		}
+	}
+	function txGetClientIdByServerId(tx, results) {
+		if (results.rows.length > 0
+				) {
+			result = results.rows.item(0).clientId;
+			console.log("clientId:" + result);
+			onSuccessCallback(result);
+		} else {
+			console.log("error invalid serverId:"+serverId);
 		}
 	}
 	return result;
@@ -774,10 +799,16 @@ function divRecordFormFill(recordId) {
 				resultObject['RecordClientId'] = recordId;
 			}
 			if (recordId.length==LENGTH_FIX){
-				//todo get clientId from serverId with callback
+				getClientIdByServerId(recordId,displayRecordWithServerId(resultObject));
 			}else{
 				displayRecord(resultObject);	
 			}
+		}
+	}
+	function displayRecordWithServerId(resultObject){
+		return function(serverId){
+			resultObject['RecordClientId'] = serverId;
+			displayRecord(resultObject);
 		}
 	}
 }
