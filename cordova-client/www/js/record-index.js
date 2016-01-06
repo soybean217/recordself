@@ -83,7 +83,6 @@ function formInitial() {
 				id : $("#catalogEditId").val()
 			};
 			editCatalogProcess(catalogInfo);
-			// signInAjax(mServerUrl);
 		}
 	});
 	$("#recordEditDelete").click(function() {
@@ -167,6 +166,7 @@ function setupCatalogListFromDb() {
 		} ]
 	});
 	$('#tableCatalog tbody').on('click', 'tr', function() {
+		console.log("setupCatalogList:"+mTitleTable.row(this).data()[0]);
 		showViewRecord(mTitleTable.row(this).data()[0])
 	});
 }
@@ -496,7 +496,7 @@ function txRefreshTitleListView(tx, results) {
 	mTitleTable.rows.add(mTitleDataSet);
 	mTitleTable.draw();
 
-	var syncThread = new syncServer();
+//	var syncThread = new syncServer();
 }
 function convertDateStringToLong(inputString) {
 	if (isNaN((new Date(inputString)).valueOf())) {
@@ -525,7 +525,9 @@ function dbInsertSingleRecord(editRecord) {
 						mLocalParameters['userId'], editRecord.detail,
 						(new Date()).valueOf() ],
 				processRecordMetadata(editRecord));
-		// showViewRecord(editRecord.titleClientId);
+		console.log("dbInsertSingleRecord:"+JSON.stringify(editRecord));
+		console.log("dbInsertSingleRecord:"+editRecord.catalogClientId);
+//		showViewRecord(editRecord.catalogClientId);
 	}
 }
 
@@ -589,7 +591,6 @@ function getClientIdByServerId(serverId, onSuccessCallback) {
 		if (results.rows.length > 0
 				) {
 			result = results.rows.item(0).clientId;
-			console.log("clientId:" + result);
 			onSuccessCallback(result);
 		} else {
 			console.log("error invalid serverId:"+serverId);
@@ -643,6 +644,8 @@ function insertRelation(idFrom, idTo) {
 }
 function insertRelationFreshCatalog(idFrom, idTo) {
 	return function(tx) {
+		console.log("insertRelationFreshCatalog:"+idFrom);
+		//todo change to client id  .
 		tx.executeSql("insert into local_relations (userId,idFrom,idTo"
 				+ " ) values (?,?,?)", [ mLocalParameters['userId'], idFrom,
 				idTo ], showViewRecord(idFrom));
@@ -700,7 +703,6 @@ function dbDeleteSingleRecord(tx) {
 }
 
 function divRecordFormFill(recordId) {
-	console.log("divRecordFormFill:" + recordId);
 	if (recordId != null && recordId != "") {
 		db.transaction(getRecordInfo(recordId), errorCB);
 	}
@@ -729,7 +731,6 @@ function divRecordFormFill(recordId) {
 	function displayRecord(resultObject) {
 		if (resultObject['RecordClientId'] != null
 				&& resultObject['RecordClientId'] != "") {
-			console.log("displayRecord:" + resultObject['RecordClientId']);
 			mCurrentRecord = resultObject;
 			$("#recordEditId").val(resultObject['RecordClientId']);
 			if (resultObject['MetadataRecordContent'] != null) {
@@ -783,9 +784,6 @@ function divRecordFormFill(recordId) {
 		var resultObject = {};
 		return function(tx, results) {
 			if (results.rows.length > 0) {
-				console
-						.log("procResultByRecordClientId:"
-								+ results.rows.length);
 				for (i = 0; i < results.rows.length; i++) {
 					if (resultObject[results.rows.item(i).contentType] == null) {
 						resultObject[results.rows.item(i).contentType] = new Array();
@@ -793,8 +791,6 @@ function divRecordFormFill(recordId) {
 					}
 					resultObject[results.rows.item(i).contentType]
 							.push(results.rows.item(i));
-					console.log(results.rows.item(i).contentType + ":"
-							+ results.rows.item(i));
 				}
 				resultObject['RecordClientId'] = recordId;
 			}

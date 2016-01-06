@@ -351,7 +351,6 @@ function updateLocalServerId(resultOfClientID, serverId, tableName) {
 // todo : need change to relation
 function dbGetLastUpdateRelationServerId(serverId, clientId) {
 	return function(tx, results) {
-		console.log("relation serverId:" + serverId + ".clientId:" + clientId);
 		tx
 				.executeSql(
 						'update local_relations set idFrom=?,modifyStatus=1 where idFrom=?',
