@@ -525,8 +525,6 @@ function dbInsertSingleRecord(editRecord) {
 						mLocalParameters['userId'], editRecord.detail,
 						(new Date()).valueOf() ],
 				processRecordMetadata(editRecord));
-		console.log("dbInsertSingleRecord:"+JSON.stringify(editRecord));
-		console.log("dbInsertSingleRecord:"+editRecord.catalogClientId);
 //		showViewRecord(editRecord.catalogClientId);
 	}
 }
@@ -549,7 +547,7 @@ function processRecordMetadata(editRecord) {
 
 function getContentServerIdByClientId(clientId, lastInsertId) {
 	var result = 0;
-	db.transaction(dbGetContentServerIdByClientId(clientId), errorCB)
+	db.transaction(dbGetContentServerIdByClientId(clientId), errorCB);
 
 	function dbGetContentServerIdByClientId(clientId) {
 		return function(tx) {
@@ -564,11 +562,11 @@ function getContentServerIdByClientId(clientId, lastInsertId) {
 		if (results.rows.length > 0
 				&& results.rows.item(0).serverId.length == LENGTH_FIX) {
 			result = results.rows.item(0).serverId;
-			db.transaction(insertRelationFreshCatalog(result, lastInsertId),
+			db.transaction(insertRelationFreshCatalog(result, lastInsertId,clientId),
 					errorCB);
 		} else {
 			db.transaction(insertRelationFreshCatalog(
-					editRecord.catalogClientId, lastInsertId), errorCB);
+					editRecord.catalogClientId, lastInsertId,clientId), errorCB);
 		}
 	}
 	return result;
@@ -642,13 +640,13 @@ function insertRelation(idFrom, idTo) {
 				idTo ]);
 	}
 }
-function insertRelationFreshCatalog(idFrom, idTo) {
+function insertRelationFreshCatalog(idFrom, idTo,catalogClientId) {
 	return function(tx) {
 		console.log("insertRelationFreshCatalog:"+idFrom);
 		//todo change to client id  .
 		tx.executeSql("insert into local_relations (userId,idFrom,idTo"
 				+ " ) values (?,?,?)", [ mLocalParameters['userId'], idFrom,
-				idTo ], showViewRecord(idFrom));
+				idTo ], showViewRecord(catalogClientId));
 	}
 }
 

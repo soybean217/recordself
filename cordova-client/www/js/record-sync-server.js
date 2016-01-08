@@ -1,4 +1,5 @@
-var sqlQuerySpecialForRelation = " and idFrom > 10000000 and idTo > 10000000 ";
+var sqlQuerySpecialForRelation = " and length(idFrom) = " + SERVER_ID_LENGTH
+		+ " and length(idTo) = " + SERVER_ID_LENGTH + " ";
 var SERVER_ID_LENGTH = 13;
 
 // todo need move into function
@@ -195,12 +196,20 @@ function handlerGetCountNeedServerId(tableName) {
 
 }
 function receiveSyncRecordRspAjax(msg, tableName) {
-	for (var i = 0; i < msg.data.length; i++) {
-		if (msg.data[i].serverId != null && msg.data[i].serverId != '') {
-			db.transaction(dbProcReceivedRow(msg.data[i], tableName), errorCB);
+	if (msg.data.length > 0) {
+		for (var i = 0; i < msg.data.length; i++) {
+			if (msg.data[i].serverId != null && msg.data[i].serverId != '') {
+				db.transaction(dbProcReceivedRow(msg.data[i], tableName),
+						errorCB);
+			}
+		}
+	} else {
+		if (tableName == "local_contents") {
+			procServerIdFromServer("local_relations");
+		} else {
+			mSyncStatus = 'stop';
 		}
 	}
-	mSyncStatus = 'stop';
 }
 function dbProcReceivedRow(row, tableName) {
 	return function(tx) {
