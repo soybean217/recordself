@@ -1,6 +1,6 @@
+var SERVER_ID_LENGTH = 13;
 var sqlQuerySpecialForRelation = " and length(idFrom) = " + SERVER_ID_LENGTH
 		+ " and length(idTo) = " + SERVER_ID_LENGTH + " ";
-var SERVER_ID_LENGTH = 13;
 
 // todo need move into function
 var needSyncCount = 0;
@@ -144,7 +144,7 @@ function syncRecordAjax(serverUrl, successAjaxProc, errorRsp, ajaxNetworkError,
 }
 
 function procServerIdFromServer(tableName) {
-	mLocalDbProcess = "procServerIdFromServer";
+	mLocalDbProcess = "procServerIdFromServer:"+tableName;
 	db.transaction(dbGetCountNeedServerId(tableName), errorCB);
 }
 
@@ -155,6 +155,7 @@ function dbGetCountNeedServerId(tableName) {
 				+ tableName + " where userId=? and serverId is null  ";
 		switch (tableName) {
 		case "local_relations":
+			console.log("sync relations dbGetCountNeedServerId");
 			tx.executeSql(
 					sqlCountNeedServerIdBase + sqlQuerySpecialForRelation,
 					[ mLocalParameters['userId'] ],
@@ -172,6 +173,7 @@ function dbGetCountNeedServerId(tableName) {
 
 function handlerGetCountNeedServerId(tableName) {
 	return function(tx, results) {
+		console.log("handlerGetCountNeedServerId:"+results.rows.length);
 		if (results.rows.length > 0) {
 			if (results.rows.item(0).total > 0) {
 				if (results.rows.item(0).total > LIMIT_UPDATE_BATCH_SIZE) {
@@ -203,14 +205,13 @@ function receiveSyncRecordRspAjax(msg, tableName) {
 						errorCB);
 			}
 		}
-	} else {
-		if (tableName == "local_contents") {
-			procServerIdFromServer("local_relations");
-		} else {
-			mSyncStatus = 'stop';
-		}
 	}
+	if (tableName == "local_contents") {
+		setTimeout(function(){procServerIdFromServer("local_relations");},5000);
+	}
+	mSyncStatus = 'stop';
 }
+
 function dbProcReceivedRow(row, tableName) {
 	return function(tx) {
 		mLocalDbProcess = "dbProcReceivedRow";
