@@ -173,7 +173,6 @@ function dbGetCountNeedServerId(tableName) {
 
 function handlerGetCountNeedServerId(tableName) {
 	return function(tx, results) {
-		console.log("handlerGetCountNeedServerId:"+results.rows.length);
 		if (results.rows.length > 0) {
 			if (results.rows.item(0).total > 0) {
 				if (results.rows.item(0).total > LIMIT_UPDATE_BATCH_SIZE) {
@@ -187,7 +186,7 @@ function handlerGetCountNeedServerId(tableName) {
 			} else {
 				// todo no result ;
 				console
-						.log("handlerGetCountNeedServerId:no record need get serverId .");
+						.log("handlerGetCountNeedServerId:no record need get serverId ."+tableName);
 				syncLocalToServer(tableName);
 			}
 		} else {
@@ -208,8 +207,9 @@ function receiveSyncRecordRspAjax(msg, tableName) {
 	}
 	if (tableName == "local_contents") {
 		setTimeout(function(){procServerIdFromServer("local_relations");},5000);
+	}else{
+		mSyncStatus = 'stop';
 	}
-	mSyncStatus = 'stop';
 }
 
 function dbProcReceivedRow(row, tableName) {
@@ -248,26 +248,11 @@ function updateOrInsertReceivedContent(row) {
 							[ mLocalParameters['userId'], row.content,
 									row.contentType, row.state,
 									row.serverUpdateTime, row.serverId,
-									(new Date()).valueOf() ],
-							updateRecordTitleClientId(row.serverId));
+									(new Date()).valueOf() ]);
 		}
 	}
 }
-// modify insertId . Perhaps no use .
-function updateRecordTitleClientId(titleServerId) {
-	return function(tx, results) {
-		tx.executeSql('select last_insert_rowid() as id', [],
-				dbGetLastUpdateTitleClientIdToUpdateRecord(titleServerId));
-	}
-}
-function dbGetLastUpdateTitleClientIdToUpdateRecord(titleServerId) {
-	return function(tx, results) {
-		tx
-				.executeSql(
-						'update local_records set titleClientId=?,modifyStatus=1 where titleServerId=?',
-						[ results.rows.item(0).id, titleServerId ]);
-	}
-}
+
 function updateOrInsertReceivedRelation(row) {
 	return function(tx, results) {
 		if (results.rows.length > 0) {
@@ -284,8 +269,8 @@ function updateOrInsertReceivedRelation(row) {
 									+ "serverUpdateTime,modifyStatus,serverId) values (?,?,?,?,?,0,?); ",
 							[ mLocalParameters['userId'], row.idFrom, row.idTo,
 									row.state, row.serverUpdateTime,
-									row.serverId ],
-							updateRecordTitleClientId(row.serverId));
+									row.serverId ]);
+
 		}
 	}
 }

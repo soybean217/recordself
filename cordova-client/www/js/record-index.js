@@ -166,7 +166,6 @@ function setupCatalogListFromDb() {
 		} ]
 	});
 	$('#tableCatalog tbody').on('click', 'tr', function() {
-		console.log("setupCatalogList:"+mTitleTable.row(this).data()[0]);
 		showViewRecord(mTitleTable.row(this).data()[0])
 	});
 }
@@ -460,8 +459,6 @@ function refreshRecordListView(tx, results) {
 	mRecordTable.clear();
 	mRecordTable.rows.add(mRecordDataSet);
 	mRecordTable.draw();
-
-	// var syncThread = new syncServer();
 }
 function dbQueryCatalog(tx) {
 	tx
@@ -642,8 +639,6 @@ function insertRelation(idFrom, idTo) {
 }
 function insertRelationFreshCatalog(idFrom, idTo,catalogClientId) {
 	return function(tx) {
-		console.log("insertRelationFreshCatalog:"+idFrom);
-		//todo change to client id  .
 		tx.executeSql("insert into local_relations (userId,idFrom,idTo"
 				+ " ) values (?,?,?)", [ mLocalParameters['userId'], idFrom,
 				idTo ], showViewRecord(catalogClientId));
