@@ -109,8 +109,6 @@ function withInputHandlerSyncDataToServer(lastServerTime, tableName) {
 				break;
 			case "local_relations":
 				row.serverId = results.rows.item(i).serverId;
-				console.log(results.rows.item(i).idFrom + ":"
-						+ results.rows.item(i).idTo);
 				row.idFrom = results.rows.item(i).idFrom;
 				row.idTo = results.rows.item(i).idTo;
 				row.state = results.rows.item(i).state;
@@ -144,7 +142,7 @@ function syncRecordAjax(serverUrl, successAjaxProc, errorRsp, ajaxNetworkError,
 }
 
 function procServerIdFromServer(tableName) {
-	mLocalDbProcess = "procServerIdFromServer:"+tableName;
+	mLocalDbProcess = "procServerIdFromServer:" + tableName;
 	db.transaction(dbGetCountNeedServerId(tableName), errorCB);
 }
 
@@ -186,7 +184,8 @@ function handlerGetCountNeedServerId(tableName) {
 			} else {
 				// todo no result ;
 				console
-						.log("handlerGetCountNeedServerId:no record need get serverId ."+tableName);
+						.log("handlerGetCountNeedServerId:no record need get serverId ."
+								+ tableName);
 				syncLocalToServer(tableName);
 			}
 		} else {
@@ -206,8 +205,10 @@ function receiveSyncRecordRspAjax(msg, tableName) {
 		}
 	}
 	if (tableName == "local_contents") {
-		setTimeout(function(){procServerIdFromServer("local_relations");},5000);
-	}else{
+		setTimeout(function() {
+			procServerIdFromServer("local_relations");
+		}, 5000);
+	} else {
 		mSyncStatus = 'stop';
 	}
 }

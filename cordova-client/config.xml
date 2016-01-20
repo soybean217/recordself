@@ -1,5 +1,5 @@
-<widget id="com.recordself.client.cordova" version="0.0.1">
-    <name>RecordSelf</name>
+<widget id="com.recordself.client.cordova.v1" version="1.0.1">
+    <name>V1RecordSelf</name>
     <description>
         A sample Apache Cordova application that responds to the deviceready event.
     </description>
