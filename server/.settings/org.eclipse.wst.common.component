@@ -5,7 +5,7 @@
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src/main/resources"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src/test/java"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src/test/resources"/>
-        <dependent-module archiveName="sample-common.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/sample-common/sample-common">
+        <dependent-module archiveName="xtone-common-0.0.1-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/xtone-java-common/xtone-java-common">
             <dependency-type>uses</dependency-type>
         </dependent-module>
         <property name="context-root" value="recordself-server"/>
