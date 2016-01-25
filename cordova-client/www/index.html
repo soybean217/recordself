@@ -3,7 +3,7 @@
 <head>
 <script>
 	//parameters
-  var mServerUrl = "http://nowiamdoing.com/for-client/";
+	var mServerUrl = "http://nowiamdoing.com/for-client/";
 	//var mServerUrl = "http://FM-X230:8080/recordself-server/for-client/";
 	//var mServerUrl = "http://192.168.1.140:8080/recordself-server/for-client/";
 </script>
@@ -140,9 +140,9 @@
 						$('*[name=recordEditBeginTime]').appendDtpicker();
 					});
 				</script>
-				<button id="recordEditBeginTimeHide" type="button" class="btn btn-default">
-					<span  class="glyphicon glyphicon-off"
-						aria-hidden="true"></span>
+				<button id="recordEditBeginTimeHide" type="button"
+					class="btn btn-default">
+					<span class="glyphicon glyphicon-off" aria-hidden="true"></span>
 				</button>
 				<script>
 					$(function() {
@@ -186,9 +186,9 @@
 						$('*[name=recordEditEndTime]').appendDtpicker();
 					});
 				</script>
-				<button id="recordEditEndTimeHide" type="button" class="btn btn-default">
-					<span class="glyphicon glyphicon-off"
-						aria-hidden="true"></span>
+				<button id="recordEditEndTimeHide" type="button"
+					class="btn btn-default">
+					<span class="glyphicon glyphicon-off" aria-hidden="true"></span>
 				</button>
 				<script>
 					$(function() {
@@ -266,6 +266,9 @@
 	<div class="container" id="divMenuAfterSignIn">
 		<a href="javascript:clearLocalDataForSignOut();"><script>
 			document.write(globalization_sign_out);
+		</script></a>
+		<a href="javascript:modifyPassword();"><script>
+			document.write(globalization_modify_password);
 		</script></a>
 	</div>
 	<script>
