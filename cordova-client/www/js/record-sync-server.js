@@ -281,7 +281,6 @@ function receiveGetServerIdAjax(msg, count, tableName) {
 	currentServerId = msg.data;
 	needSyncCount = count;
 	if (currentServerId.length == SERVER_ID_LENGTH) {
-		console.log(currentServerId);
 		db.transaction(dbProcRowNeedServerId(tableName), errorCB);
 	}
 }
@@ -324,8 +323,6 @@ function updateLocalServerId(resultOfClientID, serverId, tableName) {
 	return function(tx) {
 		for (var i = 0; i < resultOfClientID.rows.length; i++) {
 			if (tableName == "local_contents") {
-				console.log(serverId + ":"
-						+ resultOfClientID.rows.item(i).clientId);
 				tx.executeSql("update " + tableName
 						+ " set serverId=? where clientId = ?; ", [ serverId,
 						resultOfClientID.rows.item(i).clientId ],

@@ -1,0 +1,1 @@
+var mServerUrl = "http://nowiamdoing.com/for-client/";

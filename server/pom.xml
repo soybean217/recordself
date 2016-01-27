@@ -70,10 +70,11 @@
 					<version>3.0</version>
 					<failOnMissingWebXml>false</failOnMissingWebXml>
 					<webResources>
+<!-- 	can not change order , first have high priority  -->
 						<resource>
-							<directory>${runtime.env}</directory>
-							<targetPath>WEB-INF/classes</targetPath>
-						</resource>
+              <directory>${runtime.env}</directory>
+              <targetPath>./</targetPath>
+            </resource>
 						<resource>
 							<directory>../cordova-client/www</directory>
 							<targetPath>./</targetPath>
