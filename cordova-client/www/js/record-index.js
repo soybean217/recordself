@@ -410,7 +410,7 @@ function dbQueryRecord(catalogId) {
 									+ "   OR serverId IN (SELECT idTo FROM `local_relations` "
 									+ "    WHERE idFrom = (select serverId from local_contents where clientId=?) )) "
 									+ " AND c.contentType='MetadataRecordContent') "
-									+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.lastLocalTime DESC"
+									+ " ORDER BY c.lastLocalTime DESC"
 									+ " limit 0,?;", [
 									mLocalParameters['userId'], catalogId,
 									catalogId, catalogId, catalogId,
@@ -431,7 +431,7 @@ function dbQueryRecord(catalogId) {
 									+ "union SELECT serverId FROM local_contents "
 									+ " WHERE state<>-1 and contentType='SchemaRecord' and userId= ? ) "
 									+ " AND (r.idTo = c.clientId or r.idTo = c.serverId) AND c.contentType='MetadataRecordContent' "
-									+ " ORDER BY c.serverUpdateTime IS NULL DESC,c.serverUpdateTime DESC,c.lastLocalTime DESC"
+									+ " ORDER BY c.lastLocalTime DESC"
 									+ " limit 0,?;", [
 									mLocalParameters['userId'],
 									mLocalParameters['userId'], mRecordLimit ],
