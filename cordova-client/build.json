@@ -1,0 +1,11 @@
+{
+     "android": {
+         "release": {
+             "keystore": "res\\nowiamdoing-android.keystore",
+             "storePassword": "zx8ci2zu",
+             "alias": "nowiamdoing",
+             "password" : "zx8ci2zu",
+             "keystoreType": ""
+         }
+     }
+ }
