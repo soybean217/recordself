@@ -28,7 +28,8 @@
     if (userService.checkUserCurrent(user)) {
       JsonObject jsonData;
       jsonData = jsonAll.getAsJsonObject("data");
-      if (jsonAll.get("tableName").toString().equals("\"local_contents\"")){
+      String rsp = null;
+      if (jsonAll.get("tableName").toString().equals("\"local_contents\"")) {
         ReceivedLocalContents receivedLocalContents = gson.fromJson(jsonData, ReceivedLocalContents.class);
         LOG.info(receivedLocalContents);
         ContentService contentService = new ContentService();
@@ -37,10 +38,10 @@
         BaseRsp baseRsp = new BaseRsp();
         baseRsp.setStatus("success");
         baseRsp.setData(contentService.procReceive());
-        String rsp = gson.toJson(baseRsp);
+        rsp = gson.toJson(baseRsp);
         out.println(rsp);
-        LOG.debug(rsp); 
-      }else if  (jsonAll.get("tableName").toString().equals("\"local_relations\"")){
+        LOG.debug(rsp);
+      } else if (jsonAll.get("tableName").toString().equals("\"local_relations\"")) {
         ReceivedLocalRelations receivedLocalRelations = gson.fromJson(jsonData, ReceivedLocalRelations.class);
         LOG.info(receivedLocalRelations);
         RelationService relationService = new RelationService();
@@ -49,9 +50,12 @@
         BaseRsp baseRsp = new BaseRsp();
         baseRsp.setStatus("success");
         baseRsp.setData(relationService.procReceive());
-        String rsp = gson.toJson(baseRsp);
+        rsp = gson.toJson(baseRsp);
         out.println(rsp);
-        LOG.debug(rsp); 
+        LOG.debug(rsp);
+      }
+      if (rsp != null) {
+        LOG.debug(rsp.length());
       }
     } else {
       String msg = "check user failure!";
