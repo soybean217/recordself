@@ -198,6 +198,7 @@ function procInsertOrUpdateRecord() {
 		clientId : $("#recordEditId").val(),
 		catalogClientId : $("#selectCatalog").val()
 	};
+	console.log(editRecord);
 	editRecordProcess(editRecord);
 }
 
@@ -860,6 +861,7 @@ function signInOrUpSuccess(msg, password) {
 	// insert account to local database
 	mLocalDbProcess = "insertLocalUserAccout";
 	db.transaction(dbInsertAccountInfo(msg.data.userName, password), errorCB);
+	
 }
 
 function initialButton() {
@@ -887,7 +889,7 @@ function dbInsertAccountInfo(userName, password) {
 						[ "passwordEncrypted", MD5(password) ]);
 		mLocalParameters['userName'] = userName;
 		mLocalParameters['passwordEncrypted'] = MD5(password);
-		queryRecordAndDisplay();
+		queryCatalogAndDisplay()
 	}
 }
 
@@ -967,6 +969,7 @@ function dbUpdateSingleRecord(editRecord, updateArray) {
 		}
 	}
 	function updateSingleRelationIdFrom(relationClientId, idFrom) {
+		console.log("relationClientId, idFrom"+relationClientId+","+idFrom);
 		db.transaction(dbUpdateSingleRelationIdFrom(relationClientId, idFrom),
 				errorCB);
 	}

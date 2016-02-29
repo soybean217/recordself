@@ -15,4 +15,5 @@ info = new String(b, 0, len, "utf-8");
 System.out.println("####notice:\n" + info);
 System.out.println("####end:");
 Logger LOG = Logger.getLogger(this.getClass());
+response.addHeader("Access-Control-Allow-Origin", "*");
 %>
