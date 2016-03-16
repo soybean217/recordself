@@ -70,11 +70,11 @@
 					<version>3.0</version>
 					<failOnMissingWebXml>false</failOnMissingWebXml>
 					<webResources>
-<!-- 	can not change order , first have high priority  -->
+						<!-- can not change order , first have high priority -->
 						<resource>
-              <directory>${runtime.env}</directory>
-              <targetPath>./</targetPath>
-            </resource>
+							<directory>${runtime.env}</directory>
+							<targetPath>./</targetPath>
+						</resource>
 						<resource>
 							<directory>../cordova-client/www</directory>
 							<targetPath>./</targetPath>
@@ -82,7 +82,43 @@
 					</webResources>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>wagon-maven-plugin</artifactId>
+				<version>1.0-beta-4</version>
+				<executions>
+					<execution>
+						<id>upload-war</id>
+						<phase>install</phase>
+						<goals>
+							<goal>upload-single</goal>
+<!-- 							<goal>upload</goal> -->
+						</goals>
+						<configuration>
+<!-- 							<fromDir>${basedir}/target</fromDir> -->
+<!-- 							<includes>${project.build.finalName}.war</includes> -->
+<!-- 							<url>ftp://52.68.232.222:48791</url> -->
+<!-- 							<toDir>/home/fuming</toDir> -->
+<!-- 							<serverId>awstokyo01</serverId> -->
+							<fromFile>target/nowiamdoing.com.war</fromFile>
+							<url>ftp://52.68.232.222:48791/home/fuming</url>
+							<serverId>awstokyo01</serverId>
+							<toDir>/home/fuming</toDir>
+							<skip>false</skip>
+							<toFile>nowiamdoing.com.war</toFile>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
+		<extensions>
+			<!-- Enabling the use of FTP -->
+			<extension>
+				<groupId>org.apache.maven.wagon</groupId>
+				<artifactId>wagon-ftp</artifactId>
+				<version>1.0-beta-6</version>
+			</extension>
+		</extensions>
 	</build>
 	<profiles>
 		<profile>
