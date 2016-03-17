@@ -103,7 +103,7 @@
 							<fromFile>target/nowiamdoing.com.war</fromFile>
 							<url>ftp://52.68.232.222:48791/home/fuming</url>
 							<serverId>awstokyo01</serverId>
-							<toDir>/home/fuming</toDir>
+							<toDir>/opt/apache-tomcat-8.0.24/webapps</toDir>
 							<skip>false</skip>
 							<toFile>nowiamdoing.com.war</toFile>
 						</configuration>
