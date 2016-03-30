@@ -153,7 +153,6 @@ function dbGetCountNeedServerId(tableName) {
 				+ tableName + " where userId=? and serverId is null  ";
 		switch (tableName) {
 		case "local_relations":
-			console.log("sync relations dbGetCountNeedServerId");
 			tx.executeSql(
 					sqlCountNeedServerIdBase + sqlQuerySpecialForRelation,
 					[ mLocalParameters['userId'] ],
@@ -165,7 +164,6 @@ function dbGetCountNeedServerId(tableName) {
 					handlerGetCountNeedServerId(tableName), errorCB);
 			break;
 		}
-
 	}
 }
 
@@ -281,11 +279,12 @@ function receiveGetServerIdAjax(msg, count, tableName) {
 	currentServerId = msg.data;
 	needSyncCount = count;
 	if (currentServerId.length == SERVER_ID_LENGTH) {
-		db.transaction(dbProcRowNeedServerId(tableName), errorCB);
+		db.transaction(dbProcRowNeedServerId(tableName, currentServerId,
+				needSyncCount), errorCB);
 	}
 }
 
-function dbProcRowNeedServerId(tableName) {
+function dbProcRowNeedServerId(tableName, serverId, syncAmount) {
 	return function(tx) {
 		switch (tableName) {
 		case "local_contents":
@@ -294,25 +293,26 @@ function dbProcRowNeedServerId(tableName) {
 							"SELECT clientId from "
 									+ tableName
 									+ " where userId=? and serverId is null order by clientId limit ? ;",
-							[ mLocalParameters['userId'], needSyncCount ],
-							handlerUpdateClientServerId(tableName), errorCB);
+							[ mLocalParameters['userId'], syncAmount ],
+							handlerUpdateClientServerId(tableName, serverId),
+							errorCB);
 			break;
 		case "local_relations":
 			tx.executeSql("SELECT clientId from " + tableName
 					+ " where userId=? and serverId is null "
 					+ " order by clientId limit ? ;", [
-					mLocalParameters['userId'], needSyncCount ],
-					handlerUpdateClientServerId(tableName), errorCB);
+					mLocalParameters['userId'], syncAmount ],
+					handlerUpdateClientServerId(tableName, serverId), errorCB);
 			break;
 		}
 
 	}
 }
-function handlerUpdateClientServerId(tableName) {
+function handlerUpdateClientServerId(tableName, serverId) {
 	return function(tx, results) {
 		if (results.rows.length > 0) {
-			db.transaction(updateLocalServerId(results, currentServerId,
-					tableName), errorCB)
+			db.transaction(updateLocalServerId(results, serverId, tableName),
+					errorCB)
 		} else {
 			// todo no result ;
 			console.log("handlerUpdateClientServerId: no rows .");
@@ -327,12 +327,15 @@ function updateLocalServerId(resultOfClientID, serverId, tableName) {
 						+ " set serverId=? where clientId = ?; ", [ serverId,
 						resultOfClientID.rows.item(i).clientId ],
 						dbGetLastUpdateRelationServerId(serverId.toString(),
-								resultOfClientID.rows.item(i).clientId));
+								resultOfClientID.rows.item(i).clientId, i,
+								resultOfClientID.rows.length, tableName));
 			} else {
 				tx.executeSql("update " + tableName
 						+ " set serverId=? where clientId = ?; ", [
 						serverId.toString(),
-						resultOfClientID.rows.item(i).clientId ]);
+						resultOfClientID.rows.item(i).clientId ],
+						checkAndProcUpdateLastServerId(i,
+								resultOfClientID.rows.length, tableName));
 			}
 			// serverId = serverId.add(1);
 			serverId = hexAddOne(serverId);
@@ -341,17 +344,29 @@ function updateLocalServerId(resultOfClientID, serverId, tableName) {
 	}
 }
 
-// todo : need change to relation
-function dbGetLastUpdateRelationServerId(serverId, clientId) {
+function checkAndProcUpdateLastServerId(currentIndex, total, tableName) {
+	if (currentIndex == total - 1) {
+		syncLocalToServer(tableName);
+	}
+}
+
+function dbGetLastUpdateRelationServerId(serverId, clientId, currentIndex,
+		total, tableName) {
 	return function(tx, results) {
 		tx
 				.executeSql(
 						'update local_relations set idFrom=?,modifyStatus=1 where idFrom=?',
-						[ serverId, clientId ]);
+						[ serverId, clientId ], queueUpdateIdTo(serverId,
+								clientId, currentIndex, total, tableName));
+	}
+}
+function queueUpdateIdTo(serverId, clientId, currentIndex, total, tableName) {
+	return function(tx, results) {
 		tx
 				.executeSql(
 						'update local_relations set idTo=?,modifyStatus=1 where idTo=?',
-						[ serverId, clientId ]);
+						[ serverId, clientId ], checkAndProcUpdateLastServerId(
+								currentIndex, total, tableName));
 	}
 }
 
