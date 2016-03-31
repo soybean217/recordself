@@ -101,9 +101,8 @@
 <!-- 							<toDir>/home/fuming</toDir> -->
 <!-- 							<serverId>awstokyo01</serverId> -->
 							<fromFile>target/nowiamdoing.com.war</fromFile>
-							<url>ftp://52.68.232.222:48791/opt/apache-tomcat-8.0.24/swapdir</url>
+							<url>ftp://52.68.232.222:48791/opt/apache-tomcat-8.0.24/swapdir/</url>
 							<serverId>awstokyo01</serverId>
-							<toDir>/opt/apache-tomcat-8.0.24/webapps</toDir>
 							<skip>false</skip>
 							<toFile>nowiamdoing.com.war</toFile>
 						</configuration>
