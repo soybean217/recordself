@@ -248,7 +248,7 @@ function dbUpdateCatalog(info) {
 	return function(tx) {
 		tx
 				.executeSql(
-						"update local_contents set state = -1 , content = ? , lastLocalTime = ? where clientId = ? and userId = ?",
+						"update local_contents set modifyStatus = 1 , content = ? , lastLocalTime = ? where clientId = ? and userId = ?",
 						[ info.title, (new Date()).valueOf(), info.id,
 								mLocalParameters['userId'] ],
 						queryCatalogAndDisplay());
