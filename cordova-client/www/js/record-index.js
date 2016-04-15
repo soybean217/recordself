@@ -166,7 +166,7 @@ function setupCatalogListFromDb() {
 		} ]
 	});
 	$('#tableCatalog tbody').on('click', 'tr', function() {
-		showViewRecord(mTitleTable.row(this).data()[0])
+		showViewRecord(mTitleTable.row(this).data()[0],false)
 	});
 }
 
@@ -504,12 +504,15 @@ function convertDateStringToLong(inputString) {
 	}
 }
 
-function showViewRecord(catalogId) {
+function showViewRecord(catalogId,syncTag) {
 	queryRecordAndDisplay(catalogId);
 	if (catalogId != null && catalogId > 0) {
 		divRecordFormNew(catalogId);
 	} else {
 		divRecordFormNew();
+	}
+	if (syncTag){
+		var syncThread = new syncServer();
 	}
 }
 /**
@@ -523,7 +526,6 @@ function dbInsertSingleRecord(editRecord) {
 						mLocalParameters['userId'], editRecord.detail,
 						(new Date()).valueOf() ],
 				processRecordMetadata(editRecord));
-		// showViewRecord(editRecord.catalogClientId);
 	}
 }
 
@@ -642,7 +644,7 @@ function insertRelationFreshCatalog(idFrom, idTo, catalogClientId) {
 	return function(tx) {
 		tx.executeSql("insert into local_relations (userId,idFrom,idTo"
 				+ " ) values (?,?,?)", [ mLocalParameters['userId'], idFrom,
-				idTo ], showViewRecord(catalogClientId));
+				idTo ], showViewRecord(catalogClientId,true));
 	}
 }
 
@@ -693,7 +695,7 @@ function dbDeleteSingleRecord(tx) {
 					[ $("#recordEditId").val() ]);
 	tx.executeSql("update local_relations set state = -1 ,modifyStatus=1"
 			+ " where  idFrom = ?;", [ $("#recordEditId").val() ]);
-	showViewRecord($("#selectCatalog").val());
+	showViewRecord($("#selectCatalog").val(),true);
 }
 
 function divRecordFormFill(recordId) {
@@ -912,7 +914,7 @@ function dbUpdateSingleRecord(editRecord, updateArray) {
 				.transaction(
 						dbUpdateConentLastLocalTimeByClientId(editRecord.catalogClientId),
 						errorCB);
-		showViewRecord(editRecord.catalogClientId);
+		showViewRecord(editRecord.catalogClientId,true);
 	}
 	function procMetadataForUpdateRecord(editRecord) {
 		return function(element, index, array) {
