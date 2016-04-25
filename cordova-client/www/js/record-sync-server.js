@@ -1,4 +1,3 @@
-var SERVER_ID_LENGTH = 13;
 var sqlQuerySpecialForRelation = " and length(idFrom) = " + SERVER_ID_LENGTH
 		+ " and length(idTo) = " + SERVER_ID_LENGTH + " ";
 

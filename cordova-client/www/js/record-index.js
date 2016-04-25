@@ -133,7 +133,7 @@ function setupRecordListFromDb() {
 		} ]
 	});
 	$('#tableRecord tbody').on('click', 'tr', function() {
-		divRecordFormFill(mRecordTable.row(this).data()[0]);
+		clickDivRecordFormFill(mRecordTable.row(this).data()[0]);
 		document.getElementById('divRecord').scrollIntoView()
 	});
 }
@@ -166,7 +166,7 @@ function setupCatalogListFromDb() {
 		} ]
 	});
 	$('#tableCatalog tbody').on('click', 'tr', function() {
-		showViewRecord(mTitleTable.row(this).data()[0],false)
+		showViewRecord(mTitleTable.row(this).data()[0], false)
 	});
 }
 
@@ -504,14 +504,14 @@ function convertDateStringToLong(inputString) {
 	}
 }
 
-function showViewRecord(catalogId,syncTag) {
+function showViewRecord(catalogId, syncTag) {
 	queryRecordAndDisplay(catalogId);
 	if (catalogId != null && catalogId > 0) {
 		divRecordFormNew(catalogId);
 	} else {
 		divRecordFormNew();
 	}
-	if (syncTag){
+	if (syncTag) {
 		var syncThread = new syncServer();
 	}
 }
@@ -536,7 +536,7 @@ function processRecordMetadata(editRecord) {
 		insertRecordMetadataTransaction(results.insertId,
 				'MetadataRecordBeginTime', editRecord.beginTimeInputString);
 		// sync get catalogServerId
-		getContentServerIdByClientId(editRecord.catalogClientId,
+		procContentServerIdByClientId(editRecord.catalogClientId,
 				results.insertId);
 		db
 				.transaction(
@@ -545,7 +545,7 @@ function processRecordMetadata(editRecord) {
 	}
 }
 
-function getContentServerIdByClientId(clientId, lastInsertId) {
+function procContentServerIdByClientId(clientId, lastInsertId) {
 	var result = 0;
 	db.transaction(dbGetContentServerIdByClientId(clientId), errorCB);
 
@@ -571,6 +571,30 @@ function getContentServerIdByClientId(clientId, lastInsertId) {
 		}
 	}
 	return result;
+}
+
+function getServerIdByClientId(clientId, callbackSuccess) {
+	var result = 0;
+	db.transaction(dbGetContentServerIdByClientId(clientId), errorCB);
+
+	function dbGetContentServerIdByClientId(clientId) {
+		return function(tx) {
+			tx
+					.executeSql(
+							"select serverId from local_contents where clientId = ? and userId=?",
+							[ clientId, mLocalParameters['userId'] ],
+							txGetContentServerIdByClientId);
+		}
+	}
+	function txGetContentServerIdByClientId(tx, results) {
+		if (results.rows.length > 0 && results.rows.item(0).serverId != null
+				&& results.rows.item(0).serverId.length == LENGTH_FIX) {
+			result = results.rows.item(0).serverId;
+			return callbackSuccess(result);
+		} else {
+			return callbackSuccess(clientId);
+		}
+	}
 }
 
 function getClientIdByServerId(serverId, onSuccessCallback) {
@@ -644,7 +668,7 @@ function insertRelationFreshCatalog(idFrom, idTo, catalogClientId) {
 	return function(tx) {
 		tx.executeSql("insert into local_relations (userId,idFrom,idTo"
 				+ " ) values (?,?,?)", [ mLocalParameters['userId'], idFrom,
-				idTo ], showViewRecord(catalogClientId,true));
+				idTo ], showViewRecord(catalogClientId, true));
 	}
 }
 
@@ -695,7 +719,17 @@ function dbDeleteSingleRecord(tx) {
 					[ $("#recordEditId").val() ]);
 	tx.executeSql("update local_relations set state = -1 ,modifyStatus=1"
 			+ " where  idFrom = ?;", [ $("#recordEditId").val() ]);
-	showViewRecord($("#selectCatalog").val(),true);
+	showViewRecord($("#selectCatalog").val(), true);
+}
+
+function clickDivRecordFormFill(recordId) {
+	if (recordId != null && recordId != "") {
+		if (recordId.length == SERVER_ID_LENGTH) {
+			divRecordFormFill(recordId);
+		} else {
+			getServerIdByClientId(recordId, divRecordFormFill);
+		}
+	}
 }
 
 function divRecordFormFill(recordId) {
@@ -863,7 +897,7 @@ function signInOrUpSuccess(msg, password) {
 	// insert account to local database
 	mLocalDbProcess = "insertLocalUserAccout";
 	db.transaction(dbInsertAccountInfo(msg.data.userName, password), errorCB);
-	
+
 }
 
 function initialButton() {
@@ -914,7 +948,7 @@ function dbUpdateSingleRecord(editRecord, updateArray) {
 				.transaction(
 						dbUpdateConentLastLocalTimeByClientId(editRecord.catalogClientId),
 						errorCB);
-		showViewRecord(editRecord.catalogClientId,true);
+		showViewRecord(editRecord.catalogClientId, true);
 	}
 	function procMetadataForUpdateRecord(editRecord) {
 		return function(element, index, array) {
@@ -971,7 +1005,8 @@ function dbUpdateSingleRecord(editRecord, updateArray) {
 		}
 	}
 	function updateSingleRelationIdFrom(relationClientId, idFrom) {
-		console.log("relationClientId, idFrom"+relationClientId+","+idFrom);
+		console.log("relationClientId, idFrom" + relationClientId + ","
+				+ idFrom);
 		db.transaction(dbUpdateSingleRelationIdFrom(relationClientId, idFrom),
 				errorCB);
 	}
