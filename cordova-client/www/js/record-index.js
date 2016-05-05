@@ -854,7 +854,7 @@ function signInAjax(serverUrl) {
 		success : function(msg) {
 			if (msg.status == "success") {
 				if (databaseStatus == "empty") {
-					signInOrUpSuccess(msg, $("#signInUserName").val());
+					signInOrUpSuccess(msg, $("#signInPassword").val());
 				} else {
 					//
 				}
@@ -879,7 +879,7 @@ function signUpAjax(serverUrl) {
 		success : function(msg) {
 			if (msg.status == "success") {
 				if (databaseStatus == "empty") {
-					signInOrUpSuccess(msg, $("#signUpUserName").val());
+					signInOrUpSuccess(msg, $("#signUpPassword").val());
 				} else {
 					//
 				}
